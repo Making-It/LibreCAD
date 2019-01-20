@@ -21,7 +21,8 @@ SUBDIRS     = \
         plotequation \
         gear \
     myplugin \
-    offset
+    offset \
+    cam
 
 TRANSLATIONS = ./ts/plugins_ar.ts \
     ./ts/plugins_ca.ts \

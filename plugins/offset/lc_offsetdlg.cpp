@@ -20,7 +20,7 @@ LC_OffsetDlg::~LC_OffsetDlg()
 void LC_OffsetDlg::Layout()
 {
     edit = new QLineEdit;
-    edit->setText("0.0");
+    edit->setText("0");
     edit->setValidator(new QIntValidator(-100,100,this));
 
     button = new QPushButton;

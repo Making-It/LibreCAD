@@ -29,7 +29,10 @@
 
 #include "rs_previewactioninterface.h"
 #include "rs_modification.h"
+#include "rs_point.h"
 
+
+#define MIN_DIS 3.0 //xcg add 20190109
 class QPointF;
 
 /**
@@ -45,6 +48,8 @@ public:
                         RS_GraphicView& graphicView);
 	~QC_ActionGetPoint();
 
+    void getPolyLineData(QList<RS_PointData*> *data,RS_Entity* entity);//xcg add 20190109
+    bool isNear(RS_Vector& point,const QList<RS_PointData *>& points);//xcg add 20190109
     virtual void trigger() override;
 	
     virtual void mouseMoveEvent(QMouseEvent* e) override;

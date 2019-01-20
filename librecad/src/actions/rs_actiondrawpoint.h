@@ -28,8 +28,10 @@
 #define RS_ACTIONDRAWPOINT_H
 
 #include "rs_previewactioninterface.h"
+#include "rs_point.h"
+#include "rs_document.h"
 
-
+#define MIN_DIS 1.0 //xcg add 20190109
 /**
  * This action class can handle user events to draw points.
  *
@@ -42,6 +44,10 @@ public:
                        RS_GraphicView& graphicView);
 	~RS_ActionDrawPoint() override;
 
+    //QList<RS_Entity> getEntity();//xcg add 20190109
+    void getPolyLineData(QList<RS_PointData*> *data,RS_Entity* entity);//xcg add 20190109
+    void getLineData(QList<RS_PointData *> *data,RS_Entity* entity);//xcg add 20190110
+    bool isNear(RS_Vector& point,const QList<RS_PointData *>& points);//xcg add 20190109
 	void trigger() override;
 
 	void mouseMoveEvent(QMouseEvent* e) override;

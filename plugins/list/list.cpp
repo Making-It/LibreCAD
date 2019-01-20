@@ -125,6 +125,21 @@ QString LC_List::getStrData(Plug_Entity *ent) {
         strData.append( strSpecific.arg(tr("radius")).arg(d->realToStr(numA)));
         strData.append( strSpecific.arg(tr("initial angle")).arg(d->realToStr(numB*180/M_PI)));
         strData.append( strSpecific.arg(tr("final angle")).arg(d->realToStr(numC*180/M_PI)));
+
+        //xcg add 2018/12/28
+        ptA.setX(data.value(DPI::STARTX).toDouble());
+        ptA.setY(data.value(DPI::STARTY).toDouble());
+
+        ptB.setX(data.value(DPI::ENDX).toDouble());
+        ptB.setY(data.value(DPI::ENDY).toDouble());
+        strData.append( strSpecificXY.arg("from point").
+                        arg(d->realToStr(ptA.x())).
+                        arg(d->realToStr(ptA.y())));
+        strData.append( strSpecificXY.arg("to point").
+                        arg(d->realToStr(ptB.x())).
+                        arg(d->realToStr(ptB.y())));
+        //end
+
         if( numB > numC) {
             numB -= 2.0 * M_PI;
         }

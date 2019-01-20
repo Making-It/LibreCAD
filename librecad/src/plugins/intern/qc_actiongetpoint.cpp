@@ -28,6 +28,7 @@
 
 #include <QPointF>
 #include <QMouseEvent>
+#include <QDebug>
 #include "rs_snapper.h"
 #include "rs_dialogfactory.h"
 #include "rs_graphicview.h"
@@ -35,6 +36,10 @@
 #include "rs_coordinateevent.h"
 #include "rs_preview.h"
 #include "rs_debug.h"
+#include "rs_polyline.h"
+#include "rs_atomicentity.h"
+#include "rs_arc.h"
+
 
 struct QC_ActionGetPoint::Points {
 		RS_MoveData data;
@@ -108,6 +113,29 @@ void QC_ActionGetPoint::coordinateEvent(RS_CoordinateEvent* e) {
 
     RS_Vector pos = e->getCoordinate();
 
+    /*******xcg add 20190109*******/
+    //QList<RS_Entity> lt = getEntity();
+    QList<RS_Entity*> lt = container->getEntityList();
+    QList<RS_PointData* > points;
+    if(!lt.empty())
+    {
+        for(int i=0;i<lt.size();i++)
+        {
+            auto entity = lt[i];
+            RS2::EntityType type = entity->rtti();
+
+            if(type == RS2::EntityPolyline)
+            {
+                getPolyLineData(&points,entity);
+            }
+        }
+
+    }
+
+    if(isNear(pos,points))
+        qDebug() << "find near point!!!";
+    /*******xcg add 20190109*******/
+
 		pPoints->targetPoint = pos;
 		graphicView->moveRelativeZero(pPoints->targetPoint);
         trigger();
@@ -149,4 +177,73 @@ void QC_ActionGetPoint::getPoint(QPointF *point)
 
 }
 
+/************xcg add 20190109 ***********/
+void QC_ActionGetPoint::getPolyLineData(QList<RS_PointData*> *data,RS_Entity* entity)
+{
+    if (!entity) return;
+    RS2::EntityType et = entity->rtti();
+    if (et != RS2::EntityPolyline) return;
+    RS_Polyline *l = static_cast<RS_Polyline*>(entity);
+
+    RS_Entity* nextEntity = 0;
+    RS_AtomicEntity* ae = nullptr;
+    RS_Entity* v = l->firstEntity(RS2::ResolveNone);
+    double bulge=0.0;
+//bad polyline without vertex
+    if (!v) return;
+
+//First polyline vertex
+    if (v->rtti() == RS2::EntityArc) {
+        bulge = ((RS_Arc*)v)->getBulge();
+    }
+    ae = (RS_AtomicEntity*)v;
+    data->append(new RS_PointData(RS_Vector(ae->getStartpoint().x,ae->getStartpoint().y)));
+
+    for (v=l->firstEntity(RS2::ResolveNone); v; v=nextEntity) {
+        nextEntity = l->nextEntity(RS2::ResolveNone);
+        bulge = 0.0;
+        if (!v->isAtomic()) {
+            continue;
+        }
+        ae = (RS_AtomicEntity*)v;
+
+        /*
+        if (nextEntity) {
+            if (nextEntity->rtti()==RS2::EntityArc) {
+                bulge = ((RS_Arc*)nextEntity)->getBulge();
+            }
+        }
+       */
+        if (!l->isClosed() || nextEntity) {
+            data->append(new RS_PointData(RS_Vector(ae->getEndpoint().x,
+                                         ae->getEndpoint().y)));
+        }
+    }
+}
+/************xcg add 20190109 ***********/
+
+
+/************xcg add 20190109 ***********/
+bool QC_ActionGetPoint::isNear(RS_Vector& point,const QList<RS_PointData *>& points)
+{
+    if(points.empty()) return false;
+
+    for(auto pt : points)
+    {
+        double x = pt->pos.x;
+        double y = pt->pos.y;
+        double dis = sqrt((x - point.x)*(x - point.x) + (y - point.y)*(y - point.y));
+
+        if(dis <= MIN_DIS)
+        {
+            point.x = x;
+            point.y = y;
+            return true;
+        }
+    }
+
+    return false;
+
+}
+/************xcg add 20190109 ***********/
 // EOF

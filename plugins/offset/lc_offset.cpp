@@ -64,12 +64,10 @@ void LC_Offset::execComm(Document_Interface *doc, QWidget *parent, QString cmd)
 
             points.emplace_back(point2);
         }
-
     }
 
     if(flag)
     {
-
         LC_OffsetDlg dlg(parent);
         dlg.exec();
 

@@ -153,10 +153,15 @@ void lc_Sampledlg::readSettings()
     QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
     QSize size = settings.value("size", QSize(430,140)).toSize();
 
-    startxedit->setText( settings.value("startx", 0.5).toString() );
-    startyedit->setText( settings.value("starty", 0.5).toString() );
-    endxedit->setText( settings.value("endx", 3.5).toString() );
-    endyedit->setText( settings.value("endy", 3.5).toString() );
+    //startxedit->setText( settings.value("startx", 0.5).toString() );
+    //startyedit->setText( settings.value("starty", 0.5).toString() );
+    //endxedit->setText( settings.value("endx", 3.5).toString() );
+    //endyedit->setText( settings.value("endy", 3.5).toString() );
+
+    startxedit->setText( settings.value("startx").toString() );
+    startyedit->setText( settings.value("starty").toString() );
+    endxedit->setText( settings.value("endx").toString() );
+    endyedit->setText( settings.value("endy").toString() );
 
     resize(size);
     move(pos);
