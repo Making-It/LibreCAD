@@ -21,7 +21,6 @@ PluginCapabilities CamConfigure::getCapabilities() const
     cap.menuEntryPoints.append(PluginMenuLocation("plugins_menu",tr("cam")));
 
     return cap;
-
 }
 
 
@@ -43,7 +42,6 @@ void CamConfigure::execComm(Document_Interface *doc, QWidget *parent, QString cm
         if(cnt > 10) return;
         if(cancel) return;
     }
-
 
     CamDlg cam_dlg(parent);
     int res = cam_dlg.exec();
@@ -70,8 +68,8 @@ void CamConfigure::execComm(Document_Interface *doc, QWidget *parent, QString cm
         addCamPath(path,lead_length,overcut,lead_type);
 
         //get lead_point
-        getNormalPoint(lead_point,tool_path[0],tool_path[1],lead_length,side);
-        getNormalPoint(lead_point1,path[0],path[1],lead_length + delta,side);
+        getNormalPoint(lead_point,tool_path[0],tool_path[1],lead_length,side,direction);
+        getNormalPoint(lead_point1,path[0],path[1],lead_length + delta,side,direction);
 
 
         //生成刀具图形
@@ -115,7 +113,6 @@ void CamConfigure::sortPath(vector<QPointF>& points,vector<QPointF>& path,
     }
 
     path.emplace_back(start_point);
-
 }
 
 bool CamConfigure::selectEntity(Document_Interface *doc,vector<QPointF>& points,QWidget* parent)
@@ -280,7 +277,7 @@ std::vector<QPointF> CamConfigure::getOffset(const vector<QPointF>& vec,double d
 }
 
 void CamConfigure::getNormalPoint(QPointF& point,const QPointF& point1,const QPointF& point2,double l,
-                                  CAM_INFO::SideType side)
+                                  CAM_INFO::SideType side,CAM_INFO::DirectionType direction)
 {
     double x1 = point1.x();
     double y1 = point1.y();
@@ -288,7 +285,7 @@ void CamConfigure::getNormalPoint(QPointF& point,const QPointF& point1,const QPo
     double y2 = point2.y();
     double x = point1.x(),y = point1.y();
 
-    if(side == CAM_INFO::SideType::Outside)
+    if(direction == CAM_INFO::DirectionType::Right)
     {
         x = (y2*((-l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
              + l*y1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
@@ -300,7 +297,7 @@ void CamConfigure::getNormalPoint(QPointF& point,const QPointF& point1,const QPo
              +y1*y2*y2-2*y1*y1*y2+y1*y1*y1+(x2*x2-2*x1*x2+x1*x1)*y1)
              /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
     }
-    else if(side == CAM_INFO::SideType::Inside)
+    else
     {
         x = (y2*((l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
              - l*y1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)

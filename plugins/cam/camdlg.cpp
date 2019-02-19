@@ -62,15 +62,15 @@ void CamDlg::createFirstGroup()
     b1_lab3->setText(tr("Plunge Rate"));
 
     b1_edit1 = new QLineEdit(this);
-    b1_edit1->setText(tr("0"));
+    b1_edit1->setText(tr("5.0"));
     b1_edit1->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
 
     b1_edit2 = new QLineEdit(this);
-    b1_edit2->setText(tr("0"));
+    b1_edit2->setText(tr("500"));
     b1_edit2->setValidator(new QDoubleValidator(-1000.0,1000.0,2,this));
 
     b1_edit3 = new QLineEdit(this);
-    b1_edit3->setText(tr("0"));
+    b1_edit3->setText(tr("300"));
     b1_edit3->setValidator(new QDoubleValidator(-1000.0,1000.0,2,this));
 
     b1_layout = new QGridLayout;
@@ -101,6 +101,7 @@ void CamDlg::createSecondGroup()
     b2_tab1->insertItem(0,tr("On"));
     b2_tab1->insertItem(1,tr("Outside"));
     b2_tab1->insertItem(2,tr("Inside"));
+    b2_tab1->setCurrentIndex(1);//默认外偏置
 
     b2_tab2 = new QComboBox(this);
     b2_tab2->insertItem(0,tr("Climb/Left"));
@@ -148,6 +149,7 @@ void CamDlg::createThirdGroup()
     b3_tab1->insertItem(3,tr("Half Circle [from Center]"));
     b3_tab1->insertItem(4,tr("Quarter Circle [from Center]"));
     b3_tab1->insertItem(5,tr("Eighth Circle [from Center]"));
+    b3_tab1->setCurrentIndex(1);
 
     b3_tab2 = new QComboBox(this);
     b3_tab2->insertItem(0,tr("None"));
@@ -156,6 +158,7 @@ void CamDlg::createThirdGroup()
     b3_tab2->insertItem(3,tr("Half Circle [to Center] "));
     b3_tab2->insertItem(4,tr("Quarter Circle [to Center]"));
     b3_tab2->insertItem(5,tr("Eighth Circle [to Center]"));
+    b3_tab2->setCurrentIndex(1);
 
     //b3_tab2->setFocus(Qt::NoFocus);
 

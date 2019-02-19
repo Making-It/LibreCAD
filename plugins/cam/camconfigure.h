@@ -36,7 +36,7 @@ public:
 
     void addCamPath(vector<QPointF>& path,double dis,double overcut,CAM_INFO::LeadType lead_type);
     void getNormalPoint(QPointF& point,const QPointF& point1,const QPointF& point2,double dis,
-                        CAM_INFO::SideType side);
+                        CAM_INFO::SideType side,CAM_INFO::DirectionType direction);
     void getExtensionPoint(QPointF& point,const QPointF& point1,const QPointF& point2,double dis);
 private:
     vector<QPointF> tool_path;
