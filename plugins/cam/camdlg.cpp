@@ -18,7 +18,9 @@ CamDlg::CamDlg(QWidget *parent):
     connect(b3_tab1,SIGNAL(currentIndexChanged(int)),this,SLOT(changeLabel(int)));
 
     connect(b3_edit1,SIGNAL(textChanged(QString)),b3_edit2,SLOT(setText(QString)));
+
     connect(addtool,SIGNAL(clicked(bool)),this,SLOT(addTool()));
+    connect(edittool,SIGNAL(clicked(bool)),this,SLOT(editTool()));
 }
 
 
@@ -66,9 +68,13 @@ void CamDlg::createFirstGroup()
 
     addtool = new QPushButton(this);
     addtool->setText(tr("add"));
+    addtool->setMinimumWidth(40);
+    addtool->setMaximumWidth(40);
 
     edittool = new QPushButton(this);
     edittool->setText(tr("edit"));
+    edittool->setMinimumWidth(45);
+    edittool->setMaximumWidth(45);
 
     b1_edit1 = new QLineEdit(this);
     b1_edit1->setText(tr("500"));
@@ -82,14 +88,15 @@ void CamDlg::createFirstGroup()
 
     b1_layout->addWidget(b1_lab1,0,0);
     b1_layout->addWidget(b1_tab,0,1);
-    b1_layout->addWidget(addtool,0,2);
-    b2_layout->addWidget(edittool,0,3);
 
-    b1_layout->addWidget(b1_lab2,1,0);
-    b1_layout->addWidget(b1_edit1,1,1);
+    b1_layout->addWidget(addtool,1,0);
+    //b2_layout->addWidget(edittool,1,1);
 
-    b1_layout->addWidget(b1_lab3,2,0);
-    b1_layout->addWidget(b1_edit2,2,1);
+    b1_layout->addWidget(b1_lab2,2,0);
+    b1_layout->addWidget(b1_edit1,2,1);
+
+    b1_layout->addWidget(b1_lab3,3,0);
+    b1_layout->addWidget(b1_edit2,3,1);
 
     box1->setLayout(b1_layout);
 }
@@ -181,6 +188,14 @@ void CamDlg::createThirdGroup()
     b3_edit3->setText(tr("0"));
     b3_edit3->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
 
+    b3_unit_lab1 = new QLabel(this);
+    b3_unit_lab1->setText(tr("mm"));
+
+    b3_unit_lab2 = new QLabel(this);
+    b3_unit_lab2->setText(tr("mm"));
+
+    b3_unit_lab3 = new QLabel(this);
+    b3_unit_lab3->setText(tr("mm"));
 
     b3_layout = new QGridLayout;
     b3_layout->addWidget(b3_lab1,0,0);
@@ -195,6 +210,10 @@ void CamDlg::createThirdGroup()
     b3_layout->addWidget(b3_edit1,2,1);
     b3_layout->addWidget(b3_edit2,3,1);
     b3_layout->addWidget(b3_edit3,4,1);
+
+    b3_layout->addWidget(b3_unit_lab1,2,2);
+    b3_layout->addWidget(b3_unit_lab2,3,2);
+    b3_layout->addWidget(b3_unit_lab3,4,2);
 
     box3->setLayout(b3_layout);
 }
@@ -299,15 +318,55 @@ LeadType CamDlg::getLead()
 
 void CamDlg::addTool()
 {
-    /*
-    CamTool dlg(this);
-    int res = dlg.exec();
+    CamTool tool_dlg(this);
+    tool_dlg.setInfo(Tool_Info());
+    tool_dlg.setFlag(true);
+
+    int res = tool_dlg.exec();
 
     if(res == QDialog::Accepted)
     {
+        Tool_Info new_info = tool_dlg.getInfo();
 
+        cur_code = new_info.tool_code;
+        tool_mp.insert(make_pair(cur_code,new_info));
+
+        QString str("T");
+        int idx = b1_tab->count();
+        str.append(QVariant(cur_code).toString());
+        b1_tab->insertItem(idx,str);
+        b1_tab->setCurrentIndex(idx);
     }
-    */
+}
+
+void CamDlg::editTool()
+{
+    if(tool_mp.empty()) return;
+
+    CamTool tool_dlg(this);
+    tool_dlg.setInfo(tool_mp[cur_code]);
+
+    tool_dlg.setFlag(false);
+
+    int res = tool_dlg.exec();
+
+    if(res == QDialog::Accepted)
+    {
+        tool_mp.erase(cur_code);
+        b1_tab->removeItem(b1_tab->currentIndex());
+
+        Tool_Info new_info = tool_dlg.getInfo();
+
+        cur_code = new_info.tool_code;
+        tool_mp.insert(make_pair(cur_code,new_info));
+
+        QString str("T");
+        int idx = b1_tab->count();
+        str.append(QVariant(cur_code).toString());
+        b1_tab->insertItem(idx,str);
+        b1_tab->setCurrentIndex(idx);
+    }
+
 
 }
 

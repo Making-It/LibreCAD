@@ -10,26 +10,58 @@
 #include <QGridLayout>
 #include <QDialogButtonBox>
 #include <string>
+#include <set>
+#include "cam_info.h"
 
 using namespace std;
+
+class Tool_Info
+{
+public:
+    Tool_Info()
+    {
+        tool_code = 0;
+        diameter = 0.0;
+        tool_type = CAM_INFO::ToolType::Mill;
+        spin_speed = 0;
+        feed_rate = 0;
+        plunge_rate = 0;
+    }
+
+    int tool_code;
+    double diameter;
+    CAM_INFO::ToolType tool_type;
+    double spin_speed,feed_rate,plunge_rate;
+};
 
 class CamTool : public QDialog
 {
 public:
-    CamTool(QWidget* parent = nullptr);
+    CamTool(QDialog* parent = nullptr);
     void LayOut();
     void createBox();
 
+public slots:
+    void setFlag(bool flag);
+    void setInfo(Tool_Info info);
+    Tool_Info getInfo();
+
 private slots:
     void setDesc();
+    void setData();
 
 private:
     QLabel *lab1,*lab2,*lab3,*lab4,*lab5,*lab6,*lab7;
+    QLabel *unit_lab1,*unit_lab2;
     QComboBox *tab;
     QLineEdit *edit1,*edit2,*edit3,*edit4,*edit5,*edit6;
     QGroupBox *box1;
     QGridLayout *b1_layout,*layout;
     QDialogButtonBox *buttonBox;
+
+    Tool_Info cur_info;
+    set<int> code_st;
+    bool t_flag;//true -> add tool ; false -> edit tool
 
 };
 

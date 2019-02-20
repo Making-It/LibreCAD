@@ -12,23 +12,16 @@
 #include <QGroupBox>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QHBoxLayout>
 #include <QDialogButtonBox>
 #include <QPalette>
 #include <vector>
+#include <map>
 #include "cam_info.h"
 #include "camtool.h"
 
 using namespace CAM_INFO;
 using namespace std;
-
-struct tool_info
-{
-    int tool_code;
-    double diameter;
-    CAM_INFO::ToolType tool_type;
-    string desc;
-    double spin_speed,feed_rate,plunge_rate;
-};
 
 class CamDlg : public QDialog
 {
@@ -55,6 +48,7 @@ private slots:
     void setData();
     void changeLabel(int index);
     void addTool();
+    void editTool();
     //void selectStartPoint();
 
 
@@ -62,6 +56,7 @@ private:
     QGroupBox *box1,*box2,*box3;
     QPushButton *addtool,*edittool;
 
+    QLabel *b3_unit_lab1,*b3_unit_lab2,*b3_unit_lab3;
     QLabel *b1_lab1,*b1_lab2,*b1_lab3;
     QLabel *b2_lab1,*b2_lab2;
     QLabel *b3_lab1,*b3_lab2,*b3_lab3,*b3_lab4,*b3_lab5;
@@ -85,7 +80,8 @@ private:
     LeadType lead_type;
 
 
-    vector<tool_info> tool_vec;
+    map<int,Tool_Info> tool_mp;
+    int cur_code;
     vector<int> code_vec;
 };
 
