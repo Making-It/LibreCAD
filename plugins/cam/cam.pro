@@ -24,14 +24,16 @@ INCLUDEPATH    += ../../librecad/src/plugins \
 SOURCES += \
     camconfigure.cpp \
     camdlg.cpp \
-    clipper.cpp
+    clipper.cpp \
+    camtool.cpp
 
 
 HEADERS  += \
     camconfigure.h \
     camdlg.h \
     clipper.hpp \
-    cam_info.h
+    cam_info.h \
+    camtool.h
 
 
 # Installation Directory

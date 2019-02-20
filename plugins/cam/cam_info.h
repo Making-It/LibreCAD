@@ -24,6 +24,12 @@ namespace CAM_INFO {
          QuarterCircle,
          EighthCircle
      };
+
+     enum ToolType
+     {
+         Mill,
+         Drill
+     };
 }
 
 #endif // CAM_INFO_H

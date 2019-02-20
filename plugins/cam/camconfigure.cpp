@@ -67,15 +67,14 @@ void CamConfigure::execComm(Document_Interface *doc, QWidget *parent, QString cm
         //添加起刀路径
         addCamPath(path,lead_length,overcut,lead_type);
 
-        //get lead_point
-        //getNormalPoint(lead_point,tool_path[0],tool_path[1],lead_length,side,direction);
-        getNormalPoint(lead_point,path[0],path[1],lead_length,side,direction);
+        //get leadin_point
+        getNormalPoint(leadin_point,path[0],path[1],lead_length,side,direction);
+        //getNormalPoint1(leadout_point,path[path.size() - 1],path[path.size() - 2],lead_length,side,direction);
 
 
         //生成刀具图形
         doc->addLines(tool_path,true);
-        //doc->addLine(&lead_point,&tool_path[0]);
-        doc->addLine(&lead_point,&path[0]);
+        doc->addLine(&leadin_point,&path[0]);
 
         /*
         //恢复线型为SolidLine
@@ -286,6 +285,44 @@ void CamConfigure::getNormalPoint(QPointF& point,const QPointF& point1,const QPo
     double x = point1.x(),y = point1.y();
 
     if(direction == CAM_INFO::DirectionType::Left)
+    {
+        x = (y2*((-l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
+             + l*y1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
+             +x1*y2*y2+x1*y1*y1+x1*x2*x2-2*x1*x1*x2+x1*x1*x1)
+             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+
+        y = (l*x2*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
+             - l*x1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
+             +y1*y2*y2-2*y1*y1*y2+y1*y1*y1+(x2*x2-2*x1*x2+x1*x1)*y1)
+             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+    }
+    else
+    {
+        x = (y2*((l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
+             - l*y1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
+             +x1*y2*y2+x1*y1*y1+x1*x2*x2-2*x1*x1*x2+x1*x1*x1)
+             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+
+        y = (-l*x2*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
+             +l*x1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
+             +y1*y2*y2-2*y1*y1*y2+y1*y1*y1+(x2*x2-2*x1*x2+x1*x1)*y1)
+             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+    }
+
+    point.setX(x);
+    point.setY(y);
+}
+
+void CamConfigure::getNormalPoint1(QPointF& point,const QPointF& point1,const QPointF& point2,double l,
+                                  CAM_INFO::SideType side,CAM_INFO::DirectionType direction)
+{
+    double x1 = point1.x();
+    double y1 = point1.y();
+    double x2 = point2.x();
+    double y2 = point2.y();
+    double x = point1.x(),y = point1.y();
+
+    if(direction == CAM_INFO::DirectionType::Right)
     {
         x = (y2*((-l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
              + l*y1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)

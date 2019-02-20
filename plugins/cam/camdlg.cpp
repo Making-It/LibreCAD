@@ -18,6 +18,7 @@ CamDlg::CamDlg(QWidget *parent):
     connect(b3_tab1,SIGNAL(currentIndexChanged(int)),this,SLOT(changeLabel(int)));
 
     connect(b3_edit1,SIGNAL(textChanged(QString)),b3_edit2,SLOT(setText(QString)));
+    connect(addtool,SIGNAL(clicked(bool)),this,SLOT(addTool()));
 }
 
 
@@ -61,28 +62,34 @@ void CamDlg::createFirstGroup()
     b1_lab3 = new QLabel(this);
     b1_lab3->setText(tr("Plunge Rate"));
 
+    b1_tab = new QComboBox(this);
+
+    addtool = new QPushButton(this);
+    addtool->setText(tr("add"));
+
+    edittool = new QPushButton(this);
+    edittool->setText(tr("edit"));
+
     b1_edit1 = new QLineEdit(this);
-    b1_edit1->setText(tr("5.0"));
-    b1_edit1->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
+    b1_edit1->setText(tr("500"));
+    b1_edit1->setValidator(new QDoubleValidator(-1000.0,1000.0,2,this));
 
     b1_edit2 = new QLineEdit(this);
-    b1_edit2->setText(tr("500"));
+    b1_edit2->setText(tr("300"));
     b1_edit2->setValidator(new QDoubleValidator(-1000.0,1000.0,2,this));
-
-    b1_edit3 = new QLineEdit(this);
-    b1_edit3->setText(tr("300"));
-    b1_edit3->setValidator(new QDoubleValidator(-1000.0,1000.0,2,this));
 
     b1_layout = new QGridLayout;
 
     b1_layout->addWidget(b1_lab1,0,0);
-    b1_layout->addWidget(b1_edit1,0,1);
+    b1_layout->addWidget(b1_tab,0,1);
+    b1_layout->addWidget(addtool,0,2);
+    b2_layout->addWidget(edittool,0,3);
 
     b1_layout->addWidget(b1_lab2,1,0);
-    b1_layout->addWidget(b1_edit2,1,1);
+    b1_layout->addWidget(b1_edit1,1,1);
 
     b1_layout->addWidget(b1_lab3,2,0);
-    b1_layout->addWidget(b1_edit3,2,1);
+    b1_layout->addWidget(b1_edit2,2,1);
 
     box1->setLayout(b1_layout);
 }
@@ -209,36 +216,6 @@ void CamDlg::layOut()
     vbox->addWidget(buttonBox);
 
     this->setLayout(vbox);
-
-
-    /*
-    ok_btn = new QPushButton(this);
-    ok_btn->setText(tr("OK"));
-
-    label = new QLabel(this);
-    label->setText(tr("direction"));
-
-    tab = new QComboBox(this);
-    tab->insertItem(0,QString("Left"));
-    tab->insertItem(1,QString("Right"));
-    tab->setCurrentIndex(0);
-
-    label1 = new QLabel(this);
-    label1->setText(tr("tool radio"));
-
-    edit = new QLineEdit(this);
-    edit->setText(tr("0"));
-    edit->setValidator(new QIntValidator(-50,50,this));
-
-    layout = new QGridLayout(this);
-
-    layout->addWidget(label,1,0);
-    layout->addWidget(tab,1,1);
-    layout->addWidget(label1,2,0);
-    layout->addWidget(edit,2,1);
-
-    layout->addWidget(ok_btn,3,1,Qt::AlignRight);
-    */
 }
 
 void CamDlg::setData()
@@ -318,6 +295,20 @@ SideType CamDlg::getSide()
 LeadType CamDlg::getLead()
 {
     return lead_type;
+}
+
+void CamDlg::addTool()
+{
+    /*
+    CamTool dlg(this);
+    int res = dlg.exec();
+
+    if(res == QDialog::Accepted)
+    {
+
+    }
+    */
+
 }
 
 /*
