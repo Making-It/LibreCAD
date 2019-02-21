@@ -6,17 +6,19 @@
 
 using namespace CAM_INFO;
 
-CamTool::CamTool(QDialog *parent):
+CamTool::CamTool(QWidget *parent):
     QDialog(parent)
 {
     LayOut();
-    //cur_info = info;
 
-    connect(tab,SIGNAL(currentIndexChanged(int)),this,SLOT(setDesc()));
-    connect(edit3,SIGNAL(textChanged(QString)),this,SLOT(setDesc()));
+    //connect(tab,SIGNAL(activated(int)),this,SLOT(setDesc()));
+    //connect(edit3,SIGNAL(textChanged(QString)),this,SLOT(setDesc()));
 
-    connect(buttonBox,SIGNAL(accepted()),this,SLOT(setData()));
-    connect(buttonBox,SIGNAL(rejected()),this,SLOT(reject()));
+    connect(ok_btn,SIGNAL(clicked(bool)),this,SLOT(accept()));
+    //connect(ok_btn,SIGNAL(clicked(bool)),this,SLOT(setToolData()));
+    connect(cancel_btn,SIGNAL(clicked(bool)),this,SLOT(reject()));
+    //connect(buttonBox,SIGNAL(accepted()),this,SLOT(setData()));
+    //connect(buttonBox,SIGNAL(rejected()),this,SLOT(reject()));
 }
 
 void CamTool::createBox()
@@ -26,9 +28,7 @@ void CamTool::createBox()
     lab1 = new QLabel(this);
     lab1->setText(tr("Tool Code:"));
     edit1 = new QLineEdit(this);
-    //if(code_st.empty()) edit1->setText(tr("0"));
-    edit1->setText(QVariant(code_st.size() + 1).toString());
-
+    edit1->setText(tr("0"));
     edit1->setValidator(new QIntValidator(0,10,this));
 
     lab2 = new QLabel(this);
@@ -47,6 +47,7 @@ void CamTool::createBox()
     lab4->setText(tr("Diameter:"));
     edit3 = new QLineEdit(this);
     edit3->setText(tr("0"));
+
     unit_lab1 = new QLabel(this);
     unit_lab1->setText(tr("mm"));
 
@@ -54,11 +55,13 @@ void CamTool::createBox()
     lab5->setText(tr("Spindle Speed:"));
     edit4 = new QLineEdit(this);
     edit4->setText(tr("0"));
+
     unit_lab2 = new QLabel(this);
     unit_lab2->setText(tr("r.p.m"));
 
     lab6 = new QLabel(this);
     lab6->setText(tr("Feed Rate"));
+
     edit5 = new QLineEdit(this);
     edit5->setText(tr("0"));
 
@@ -100,18 +103,26 @@ void CamTool::LayOut()
     setWindowTitle(tr("Edit CAM Tool"));
     createBox();
 
-    buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-
     QVBoxLayout *vbox = new QVBoxLayout;
+    QHBoxLayout *hbox = new QHBoxLayout;
+
+    ok_btn = new QPushButton(tr("OK"));
+    hbox->addStretch();
+    hbox->addWidget(ok_btn);
+
+    cancel_btn = new QPushButton(tr("Cancel"));
+    hbox->addStretch();
+    hbox->addWidget(cancel_btn);
+
     vbox->addWidget(box1);
-    vbox->addWidget(buttonBox);
+    vbox->addLayout(hbox);
 
     this->setLayout(vbox);
 }
 
 void CamTool::setDesc()
 {
-    QString str;
+    QString str("");
     str.append(tab->currentIndex() == 0 ? tr("Mill") : tr("Drill"));
     str.append(tr(" ("));
     str.append(edit3->text());
@@ -120,13 +131,13 @@ void CamTool::setDesc()
     edit2->setText(str);
 }
 
-void CamTool::setData()
+bool CamTool::setToolData()
 {
     cur_info.tool_code = edit1->text().toInt();
     if(code_st.find(cur_info.tool_code) != code_st.end() && t_flag)
     {
         QMessageBox::information(this,"Error","The ToolCode has been used!");
-        return;
+        return false;
     }
 
     cur_info.diameter = edit3->text().toDouble();
@@ -134,13 +145,13 @@ void CamTool::setData()
                                                      : CAM_INFO::ToolType::Drill;
 
     cur_info.spin_speed = edit4->text().toDouble();
-    cur_info.feed_rate = edit4->text().toDouble();
-    cur_info.plunge_rate = edit4->text().toDouble();
+    cur_info.feed_rate = edit5->text().toDouble();
+    cur_info.plunge_rate = edit6->text().toDouble();
 
     code_st.insert(cur_info.tool_code);
 
-    this->accept();
-
+    return true;
+    //this->accept();
 }
 
 Tool_Info CamTool::getInfo()
@@ -156,5 +167,34 @@ void CamTool::setFlag(bool flag)
 void CamTool::setInfo(Tool_Info info)
 {
     cur_info = info;
+}
+
+void CamTool::reLayout()
+{
+    if(cur_info.tool_type == CAM_INFO::ToolType::Mill) tab->setCurrentIndex(0);
+    else tab->setCurrentIndex(1);
+
+    if(t_flag)
+    {
+        if(code_st.empty())
+            edit1->setText(QVariant(1).toString());
+        else
+        {
+            auto iter = code_st.rbegin();
+            edit1->setText(QVariant(*iter + 1).toString());
+        }
+    }
+    else
+        edit1->setText(QVariant(cur_info.tool_code).toString());
+
+    edit3->setText(QVariant(cur_info.diameter).toString());
+    edit4->setText(QVariant(cur_info.spin_speed).toString());
+    edit5->setText(QVariant(cur_info.feed_rate).toString());
+    edit6->setText(QVariant(cur_info.plunge_rate).toString());
+}
+
+void CamTool::removeCode(int code)
+{
+    code_st.erase(code);
 }
 

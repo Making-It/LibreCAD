@@ -49,10 +49,12 @@ private slots:
     void changeLabel(int index);
     void addTool();
     void editTool();
+    void changeCurCode();
     //void selectStartPoint();
 
 
 private:
+    CamTool *tool_dlg;
     QGroupBox *box1,*box2,*box3;
     QPushButton *addtool,*edittool;
 

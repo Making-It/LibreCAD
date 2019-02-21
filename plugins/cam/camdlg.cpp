@@ -15,6 +15,8 @@ CamDlg::CamDlg(QWidget *parent):
     connect(b3_tab2,SIGNAL(activated(int)),b3_tab1,SLOT(setCurrentIndex(int)));
 
     //根据tab选择的Lead类型，改变标签Lead In Length/Radius
+    connect(b1_tab,SIGNAL(currentIndexChanged(int)),this,SLOT(changeCurCode()));
+
     connect(b3_tab1,SIGNAL(currentIndexChanged(int)),this,SLOT(changeLabel(int)));
 
     connect(b3_edit1,SIGNAL(textChanged(QString)),b3_edit2,SLOT(setText(QString)));
@@ -31,10 +33,15 @@ CamDlg::~CamDlg()
 
 void CamDlg::init()
 {
+    tool_dlg = new CamTool(this);
     lead_length = -1;
     lead_radius = -1;
     over_cut = -1;
     radius = -1;
+
+    cur_code = -1;
+    //code_vec.clear();
+    //tool_mp.clear();
 }
 
 void CamDlg::changeLabel(int index)
@@ -66,15 +73,21 @@ void CamDlg::createFirstGroup()
 
     b1_tab = new QComboBox(this);
 
+    QHBoxLayout *hbox = new QHBoxLayout;
+
     addtool = new QPushButton(this);
     addtool->setText(tr("add"));
     addtool->setMinimumWidth(40);
     addtool->setMaximumWidth(40);
+    hbox->addStretch();
+    hbox->addWidget(addtool);
 
     edittool = new QPushButton(this);
     edittool->setText(tr("edit"));
     edittool->setMinimumWidth(45);
     edittool->setMaximumWidth(45);
+    hbox->addStretch();
+    hbox->addWidget(edittool);
 
     b1_edit1 = new QLineEdit(this);
     b1_edit1->setText(tr("500"));
@@ -88,15 +101,14 @@ void CamDlg::createFirstGroup()
 
     b1_layout->addWidget(b1_lab1,0,0);
     b1_layout->addWidget(b1_tab,0,1);
+    b1_layout->addLayout(hbox,0,2);
 
-    b1_layout->addWidget(addtool,1,0);
-    //b2_layout->addWidget(edittool,1,1);
+    b1_layout->addWidget(b1_lab2,1,0);
+    b1_layout->addWidget(b1_edit1,1,1);
+    //b2_layout->addWidget(edittool,1,2);
 
-    b1_layout->addWidget(b1_lab2,2,0);
-    b1_layout->addWidget(b1_edit1,2,1);
-
-    b1_layout->addWidget(b1_lab3,3,0);
-    b1_layout->addWidget(b1_edit2,3,1);
+    b1_layout->addWidget(b1_lab3,2,0);
+    b1_layout->addWidget(b1_edit2,2,1);
 
     box1->setLayout(b1_layout);
 }
@@ -318,15 +330,18 @@ LeadType CamDlg::getLead()
 
 void CamDlg::addTool()
 {
-    CamTool tool_dlg(this);
-    tool_dlg.setInfo(Tool_Info());
-    tool_dlg.setFlag(true);
+    //CamTool tool_dlg((QWidget*)this->parent());
+    tool_dlg->setFlag(true);
+    tool_dlg->setInfo(Tool_Info());
+    tool_dlg->reLayout();
 
-    int res = tool_dlg.exec();
+    int res = tool_dlg->exec();
 
     if(res == QDialog::Accepted)
     {
-        Tool_Info new_info = tool_dlg.getInfo();
+        if(!tool_dlg->setToolData()) return;
+
+        Tool_Info new_info = tool_dlg->getInfo();
 
         cur_code = new_info.tool_code;
         tool_mp.insert(make_pair(cur_code,new_info));
@@ -343,31 +358,54 @@ void CamDlg::editTool()
 {
     if(tool_mp.empty()) return;
 
-    CamTool tool_dlg(this);
-    tool_dlg.setInfo(tool_mp[cur_code]);
+    //CamTool tool_dlg(tool_mp[cur_code],(QWidget*)this->parent());
+    tool_dlg->setFlag(false);
+    tool_dlg->setInfo(tool_mp[cur_code]);
+    tool_dlg->reLayout();
 
-    tool_dlg.setFlag(false);
-
-    int res = tool_dlg.exec();
+    int res = tool_dlg->exec();
 
     if(res == QDialog::Accepted)
     {
-        tool_mp.erase(cur_code);
-        b1_tab->removeItem(b1_tab->currentIndex());
+        //添加tool时，如果发现too_code重复，则返回
+        if(!tool_dlg->setToolData()) return;
 
-        Tool_Info new_info = tool_dlg.getInfo();
+        Tool_Info new_info = tool_dlg->getInfo();
 
-        cur_code = new_info.tool_code;
-        tool_mp.insert(make_pair(cur_code,new_info));
+        if(cur_code != new_info.tool_code)
+        {
+            //编辑模式更改了tool code,从mp和st删除原有的info
+            tool_mp.erase(cur_code);
+            tool_dlg->removeCode(cur_code);
 
-        QString str("T");
-        int idx = b1_tab->count();
-        str.append(QVariant(cur_code).toString());
-        b1_tab->insertItem(idx,str);
-        b1_tab->setCurrentIndex(idx);
+            int old_idx = b1_tab->currentIndex();
+
+            //加入新的tool code
+            cur_code = new_info.tool_code;
+            tool_mp.insert(make_pair(cur_code,new_info));
+
+            //设置ComboBox当前index
+            QString str("T");
+            int idx = b1_tab->count();
+            str.append(QVariant(cur_code).toString());
+            b1_tab->insertItem(idx,str);
+            b1_tab->setCurrentIndex(idx);
+
+            b1_tab->removeItem(old_idx);
+
+        }
+        else{
+            tool_mp[cur_code] = new_info;
+        }
     }
+}
 
+void CamDlg::changeCurCode()
+{
+    QString str = b1_tab->currentText();
+    int sz = str.size();
 
+    cur_code = QString(str.at(sz - 1)).toInt();
 }
 
 /*
