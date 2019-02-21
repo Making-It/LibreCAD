@@ -23,6 +23,8 @@ CamDlg::CamDlg(QWidget *parent):
 
     connect(addtool,SIGNAL(clicked(bool)),this,SLOT(addTool()));
     connect(edittool,SIGNAL(clicked(bool)),this,SLOT(editTool()));
+
+    connect(this,SIGNAL(dataChanged(Tool_Info)),this,SLOT(setSpeed(Tool_Info)));
 }
 
 
@@ -63,13 +65,13 @@ void CamDlg::createFirstGroup()
     box1 = new QGroupBox(tr("Toolpath"));
 
     b1_lab1 = new QLabel(this);
-    b1_lab1->setText(tr("Tool"));
+    b1_lab1->setText(tr("Tool:"));
 
     b1_lab2 = new QLabel(this);
-    b1_lab2->setText(tr("Feed Rate"));
+    b1_lab2->setText(tr("Feed Rate:"));
 
     b1_lab3 = new QLabel(this);
-    b1_lab3->setText(tr("Plunge Rate"));
+    b1_lab3->setText(tr("Plunge Rate:"));
 
     b1_tab = new QComboBox(this);
 
@@ -90,11 +92,11 @@ void CamDlg::createFirstGroup()
     hbox->addWidget(edittool);
 
     b1_edit1 = new QLineEdit(this);
-    b1_edit1->setText(tr("500"));
+    b1_edit1->setText(tr("0"));
     b1_edit1->setValidator(new QDoubleValidator(-1000.0,1000.0,2,this));
 
     b1_edit2 = new QLineEdit(this);
-    b1_edit2->setText(tr("300"));
+    b1_edit2->setText(tr("0"));
     b1_edit2->setValidator(new QDoubleValidator(-1000.0,1000.0,2,this));
 
     b1_layout = new QGridLayout;
@@ -115,13 +117,13 @@ void CamDlg::createFirstGroup()
 
 void CamDlg::createSecondGroup()
 {
-    box2 = new QGroupBox(tr("Side/Directions"));
+    box2 = new QGroupBox(tr("Side / Directions"));
 
     b2_lab1 = new QLabel(this);
-    b2_lab1->setText(tr("Side"));
+    b2_lab1->setText(tr("Side:"));
 
     b2_lab2 = new QLabel(this);
-    b2_lab2->setText(tr("Directions"));
+    b2_lab2->setText(tr("Direction:"));
 
     b2_tab1 = new QComboBox(this);
     b2_tab1->insertItem(0,tr("On"));
@@ -141,7 +143,6 @@ void CamDlg::createSecondGroup()
     b2_layout->addWidget(b2_tab2,1,1);
 
     box2->setLayout(b2_layout);
-
 }
 
 void CamDlg::createThirdGroup()
@@ -152,21 +153,21 @@ void CamDlg::createThirdGroup()
     box3 = new QGroupBox(tr("Leads"));
 
     b3_lab1 = new QLabel(this);
-    b3_lab1->setText(tr("Lead In Type"));
+    b3_lab1->setText(tr("Lead In Type:"));
 
     b3_lab2 = new QLabel(this);
-    b3_lab2->setText(tr("Lead Out Type"));
+    b3_lab2->setText(tr("Lead Out Type:"));
     b3_lab2->setPalette(pa);
 
     b3_lab3 = new QLabel(this);
-    b3_lab3->setText(tr("Lead In Length"));
+    b3_lab3->setText(tr("Lead In Length:"));
 
     b3_lab4 = new QLabel(this);
-    b3_lab4->setText(tr("Lead Out Length"));
+    b3_lab4->setText(tr("Lead Out Length:"));
     b3_lab4->setPalette(pa);
 
     b3_lab5 = new QLabel(this);
-    b3_lab5->setText(tr("Overcut"));
+    b3_lab5->setText(tr("Overcut:"));
 
     b3_tab1 = new QComboBox(this);
     b3_tab1->insertItem(0,tr("None"));
@@ -230,13 +231,75 @@ void CamDlg::createThirdGroup()
     box3->setLayout(b3_layout);
 }
 
+void CamDlg::createFourthGroup()
+{
+    box4 = new QGroupBox(tr("Cutting Depths:"));
+
+    b4_lab1 = new QLabel(this);
+    b4_lab1->setText(tr("Safe Z (a):"));
+
+    b4_lab2 = new QLabel(this);
+    b4_lab2->setText(tr("Start Depth (b):"));
+
+    b4_lab3 = new QLabel(this);
+    b4_lab3->setText(tr("Cut Depth (c):"));
+
+    b4_lab4 = new QLabel(this);
+    b4_lab4->setText(tr("Passes:"));
+
+    b4_edit1 = new QLineEdit(this);
+    b4_edit1->setText(tr("0"));
+    b4_edit1->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
+
+    b4_edit2 = new QLineEdit(this);
+    b4_edit2->setText(tr("0"));
+    b4_edit2->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
+
+    b4_edit3 = new QLineEdit(this);
+    b4_edit3->setText(tr("0"));
+    b4_edit3->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
+
+    b4_edit4 = new QLineEdit(this);
+    b4_edit4->setText(tr("1"));
+    b4_edit4->setValidator(new QIntValidator(0,10,this));
+
+    b4_unit_lab1 = new QLabel(this);
+    b4_unit_lab1->setText(tr("mm"));
+
+    b4_unit_lab2 = new QLabel(this);
+    b4_unit_lab2->setText(tr("mm"));
+
+    b4_unit_lab3 = new QLabel(this);
+    b4_unit_lab3->setText(tr("mm"));
+
+    b4_layout = new QGridLayout;
+
+    b4_layout->addWidget(b4_lab1,0,0);
+    b4_layout->addWidget(b4_lab2,1,0);
+    b4_layout->addWidget(b4_lab3,2,0);
+    b4_layout->addWidget(b4_lab4,3,0);
+
+    b4_layout->addWidget(b4_edit1,0,1);
+    b4_layout->addWidget(b4_edit2,1,1);
+    b4_layout->addWidget(b4_edit3,2,1);
+    b4_layout->addWidget(b4_edit4,3,1);
+
+    b4_layout->addWidget(b4_unit_lab1,0,2);
+    b4_layout->addWidget(b4_unit_lab2,1,2);
+    b4_layout->addWidget(b4_unit_lab3,2,2);
+
+    box4->setLayout(b4_layout);
+
+}
+
 void CamDlg::layOut()
 {
-    setWindowTitle(tr("Cam Profile Toolpath"));
+    setWindowTitle(tr("Cam Toolpath"));
 
     createFirstGroup();
     createSecondGroup();
     createThirdGroup();
+    createFourthGroup();
 
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 
@@ -244,6 +307,7 @@ void CamDlg::layOut()
     vbox->addWidget(box1);
     vbox->addWidget(box2);
     vbox->addWidget(box3);
+    vbox->addWidget(box4);
     vbox->addWidget(buttonBox);
 
     this->setLayout(vbox);
@@ -293,7 +357,7 @@ void CamDlg::setData()
     else lead_radius = b3_edit1->text().toDouble();
 
     over_cut = b3_edit3->text().toDouble();
-    radius = b1_edit1->text().toDouble();
+    //radius = b1_edit1->text().toDouble();
 
     this->accept();
 }
@@ -351,6 +415,8 @@ void CamDlg::addTool()
         str.append(QVariant(cur_code).toString());
         b1_tab->insertItem(idx,str);
         b1_tab->setCurrentIndex(idx);
+
+        emit dataChanged(tool_mp[cur_code]);
     }
 }
 
@@ -392,11 +458,12 @@ void CamDlg::editTool()
             b1_tab->setCurrentIndex(idx);
 
             b1_tab->removeItem(old_idx);
-
         }
         else{
             tool_mp[cur_code] = new_info;
         }
+
+        emit dataChanged(tool_mp[cur_code]);
     }
 }
 
@@ -408,9 +475,13 @@ void CamDlg::changeCurCode()
     cur_code = QString(str.at(sz - 1)).toInt();
 }
 
-/*
-void CamDlg::selectStartPoint()
+void CamDlg::setSpeed(Tool_Info info)
 {
-
+    b1_edit1->setText(QVariant(info.feed_rate).toString());
+    b1_edit2->setText(QVariant(info.plunge_rate).toString());
 }
-*/
+
+Tool_Info CamDlg::getToolInfo()
+{
+    return tool_mp[cur_code];
+}

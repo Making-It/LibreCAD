@@ -39,10 +39,15 @@ public:
     LeadType getLead();
     DirectionType getDirection();
     SideType getSide();
+    Tool_Info getToolInfo();
 
     void createFirstGroup();
     void createSecondGroup();
     void createThirdGroup();
+    void createFourthGroup();
+
+signals:
+    void dataChanged(Tool_Info info);
 
 private slots:
     void setData();
@@ -50,15 +55,15 @@ private slots:
     void addTool();
     void editTool();
     void changeCurCode();
+    void setSpeed(Tool_Info info);
     //void selectStartPoint();
 
 
 private:
     CamTool *tool_dlg;
-    QGroupBox *box1,*box2,*box3;
+    QGroupBox *box1,*box2,*box3,*box4;
     QPushButton *addtool,*edittool;
 
-    QLabel *b3_unit_lab1,*b3_unit_lab2,*b3_unit_lab3;
     QLabel *b1_lab1,*b1_lab2,*b1_lab3;
     QLabel *b2_lab1,*b2_lab2;
     QLabel *b3_lab1,*b3_lab2,*b3_lab3,*b3_lab4,*b3_lab5;
@@ -68,8 +73,13 @@ private:
 
     QComboBox *b3_tab1,*b3_tab2;
     QLineEdit *b3_edit1,*b3_edit2,*b3_edit3;
+    QLabel *b3_unit_lab1,*b3_unit_lab2,*b3_unit_lab3;
 
-    QGridLayout *b1_layout,*b2_layout,*b3_layout;
+    QLabel *b4_lab1,*b4_lab2,*b4_lab3,*b4_lab4;
+    QLineEdit *b4_edit1,*b4_edit2,*b4_edit3,*b4_edit4;
+    QLabel *b4_unit_lab1,*b4_unit_lab2,*b4_unit_lab3;
+
+    QGridLayout *b1_layout,*b2_layout,*b3_layout,*b4_layout;
 
     QGridLayout *layout;
     QDialogButtonBox *buttonBox;
@@ -80,7 +90,6 @@ private:
     DirectionType direction;
     SideType side;
     LeadType lead_type;
-
 
     map<int,Tool_Info> tool_mp;
     int cur_code;
