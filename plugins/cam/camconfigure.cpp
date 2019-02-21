@@ -48,7 +48,9 @@ void CamConfigure::execComm(Document_Interface *doc, QWidget *parent, QString cm
 
     if(res == QDialog::Accepted)
     {
-        double delta = cam_dlg.getRadius();
+        Tool_Info info = cam_dlg.getToolInfo();
+
+        double delta = info.diameter * 0.5;
         double lead_length = cam_dlg.getLeadLength();
         double overcut = cam_dlg.getOverCut();
 

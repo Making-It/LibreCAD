@@ -60,13 +60,13 @@ void CamTool::createBox()
     unit_lab2->setText(tr("r.p.m"));
 
     lab6 = new QLabel(this);
-    lab6->setText(tr("Feed Rate"));
+    lab6->setText(tr("Feed Rate:"));
 
     edit5 = new QLineEdit(this);
     edit5->setText(tr("0"));
 
     lab7 = new QLabel(this);
-    lab7->setText(tr("Plunge Rate"));
+    lab7->setText(tr("Plunge Rate:"));
     edit6 = new QLineEdit(this);
     edit6->setText(tr("0"));
 
