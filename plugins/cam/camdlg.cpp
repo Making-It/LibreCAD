@@ -357,37 +357,41 @@ void CamDlg::setData()
     else lead_radius = b3_edit1->text().toDouble();
 
     over_cut = b3_edit3->text().toDouble();
-    //radius = b1_edit1->text().toDouble();
+
+    dep_info.safe_z = b4_edit1->text().toDouble();
+    dep_info.start_depth = b4_edit2->text().toDouble();
+    dep_info.cut_depth = b4_edit3->text().toDouble();
+    dep_info.passes = b4_edit4->text().toDouble();
 
     this->accept();
 }
 
-double CamDlg::getRadius()
+double CamDlg::getRadius() const
 {
     return radius;
 }
 
-double CamDlg::getLeadLength()
+double CamDlg::getLeadLength() const
 {
     return lead_length;
 }
 
-double CamDlg::getOverCut()
+double CamDlg::getOverCut() const
 {
     return over_cut;
 }
 
-DirectionType CamDlg::getDirection()
+DirectionType CamDlg::getDirection() const
 {
     return direction;
 }
 
-SideType CamDlg::getSide()
+SideType CamDlg::getSide() const
 {
     return side;
 }
 
-LeadType CamDlg::getLead()
+LeadType CamDlg::getLead() const
 {
     return lead_type;
 }
@@ -415,6 +419,9 @@ void CamDlg::addTool()
         str.append(QVariant(cur_code).toString());
         b1_tab->insertItem(idx,str);
         b1_tab->setCurrentIndex(idx);
+
+        b1_edit1->setText(QVariant(new_info.feed_rate).toString());
+        b1_edit2->setText(QVariant(new_info.plunge_rate).toString());
 
         emit dataChanged(tool_mp[cur_code]);
     }
@@ -463,6 +470,11 @@ void CamDlg::editTool()
             tool_mp[cur_code] = new_info;
         }
 
+        Tool_Info cur_info = tool_mp[cur_code];
+
+        b1_edit1->setText(QVariant(cur_info.feed_rate).toString());
+        b1_edit2->setText(QVariant(cur_info.plunge_rate).toString());
+
         emit dataChanged(tool_mp[cur_code]);
     }
 }
@@ -484,4 +496,9 @@ void CamDlg::setSpeed(Tool_Info info)
 Tool_Info CamDlg::getToolInfo()
 {
     return tool_mp[cur_code];
+}
+
+Depth_Info CamDlg::getDepthInfo() const
+{
+    return dep_info;
 }

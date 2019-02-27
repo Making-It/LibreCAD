@@ -652,7 +652,7 @@ void Plugin_Entity::getPolylineData(QList<Plug_VertexData> *data){
 
 //First polyline vertex
     if (v->rtti() == RS2::EntityArc) {
-        bulge = ((RS_Arc*)v)->getBulge();
+        bulge = ((RS_Arc*)v)->getBulge();//bulge < 0 顺时针;bulge > 0 逆时针
     }
     ae = (RS_AtomicEntity*)v;
     data->append(Plug_VertexData(QPointF(ae->getStartpoint().x,

@@ -4,7 +4,8 @@
 #include <QObject>
 #include <vector>
 #include <algorithm>
-
+#include <map>
+#include <unordered_map>
 #include "clipper.hpp"
 #include "qc_plugininterface.h"
 #include "document_interface.h"
@@ -13,6 +14,8 @@
 
 
 using namespace std;
+
+//class Plug_Entity;
 
 class CamConfigure : public QObject,QC_PluginInterface
 {
@@ -30,20 +33,38 @@ public:
     void setDot(Document_Interface* doc);
     bool selectStartPoint(Document_Interface* doc,QPointF& point,
                           const vector<QPointF>& points,QWidget* parent,bool& cancel);
-    bool selectEntity(Document_Interface* doc,vector<QPointF>& points,QWidget* parent);
-    void sortPath(vector<QPointF>& points,vector<QPointF>& path,
-                  QPointF& start_point,CAM_INFO::DirectionType direction,CAM_INFO::SideType side);
+    bool selectEntity(Document_Interface* doc,vector<QPointF>& points,
+                      vector<Plug_VertexData>& g_points,QWidget* parent);
 
-    void addCamPath(vector<QPointF>& path,double dis,double overcut,CAM_INFO::LeadType lead_type);
+    void sortPath(vector<QPointF>& points,QPointF& start_point,
+                  CAM_INFO::DirectionType direction,CAM_INFO::SideType side);
+
+    void sortGPath(vector<Plug_VertexData>& g_points,QPointF& start_point,
+                   CAM_INFO::DirectionType direction,CAM_INFO::SideType side);
+
+    void addCamPath();
+    void addGPath();
+    void generateGCode();
     void getNormalPoint(QPointF& point,const QPointF& point1,const QPointF& point2,double dis,
                         CAM_INFO::SideType side,CAM_INFO::DirectionType direction);
     void getNormalPoint1(QPointF& point,const QPointF& point1,const QPointF& point2,double dis,
                         CAM_INFO::SideType side,CAM_INFO::DirectionType direction);
     void getExtensionPoint(QPointF& point,const QPointF& point1,const QPointF& point2,double dis);
+
+    double polylineRadius( const Plug_VertexData& ptA, const Plug_VertexData& ptB);
 private:
+    vector<Plug_VertexData> g_path;
     vector<QPointF> tool_path;
+    vector<QPointF> path;//path中存放排序后的路径
+    //map<QPointF,double> cir_mp;
     QPointF leadin_point,leadout_point;
-    //convLTW convert;
+
+    Tool_Info t_info;
+    Depth_Info d_info;
+    double delta,lead_length,overcut;
+    CAM_INFO::DirectionType direction;
+    CAM_INFO::LeadType lead_type;
+    CAM_INFO::SideType side;
 
 };
 

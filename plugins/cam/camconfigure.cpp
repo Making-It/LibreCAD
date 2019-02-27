@@ -1,10 +1,12 @@
 #include <QMessageBox>
 #include <QDebug>
-
-#include "camconfigure.h"
-#include "rs_polyline.h"
+#include <QFile>
+#include <QFileDialog>
+#include <QIODevice>
 
 #include <math.h>
+#include "camconfigure.h"
+#include "rs_polyline.h"
 
 
 //using namespace std;
@@ -12,13 +14,13 @@ using namespace ClipperLib;
 
 QString CamConfigure::name() const
 {
-    return QString(tr("cam"));
+    return QString(tr("CAM"));
 }
 
 PluginCapabilities CamConfigure::getCapabilities() const
 {
     PluginCapabilities cap;
-    cap.menuEntryPoints.append(PluginMenuLocation("plugins_menu",tr("cam")));
+    cap.menuEntryPoints.append(PluginMenuLocation("plugins_menu",tr("CAM")));
 
     return cap;
 }
@@ -29,7 +31,8 @@ void CamConfigure::execComm(Document_Interface *doc, QWidget *parent, QString cm
     Q_UNUSED(cmd);
 
     vector<QPointF> points;
-    if(!selectEntity(doc,points,parent)) return;
+    vector<Plug_VertexData> g_points;
+    if(!selectEntity(doc,points,g_points,parent)) return;
 
     QPointF start_point;
     //if(!selectStartPoint(doc,start_point)) return;
@@ -48,54 +51,71 @@ void CamConfigure::execComm(Document_Interface *doc, QWidget *parent, QString cm
 
     if(res == QDialog::Accepted)
     {
-        Tool_Info info = cam_dlg.getToolInfo();
+        t_info = cam_dlg.getToolInfo();
+        d_info = cam_dlg.getDepthInfo();
 
-        double delta = info.diameter * 0.5;
-        double lead_length = cam_dlg.getLeadLength();
-        double overcut = cam_dlg.getOverCut();
+        delta = t_info.diameter * 0.5;
+        lead_length = cam_dlg.getLeadLength();
+        overcut = cam_dlg.getOverCut();
 
-        CAM_INFO::DirectionType direction = cam_dlg.getDirection();
-        CAM_INFO::LeadType lead_type = cam_dlg.getLead();
-        CAM_INFO::SideType side = cam_dlg.getSide();
+        direction = cam_dlg.getDirection();
+        lead_type = cam_dlg.getLead();
+        side = cam_dlg.getSide();
 
-        vector<QPointF> path;
-        sortPath(points,path,start_point,direction,side);
+        sortPath(points,start_point,direction,side);
+        sortGPath(g_points,start_point,direction,side);
+        if(g_path.empty())
+        {
+            QMessageBox::information(parent,"Warning","g_path is empty!");
+            return;
+        }
 
-        tool_path = getOffset(path,delta * (static_cast<int>(side)) );
+        //tool_path = getOffset(path,delta * (static_cast<int>(side)) );
 
         //路径标虚线
         setDot(doc);
 
+        //get leadin_point/leadout_point
+        if(lead_type == CAM_INFO::LeadType::Normal)
+        {
+            getNormalPoint(leadin_point,path[0],path[1],lead_length,side,direction);
+            getNormalPoint1(leadout_point,path[path.size() - 1],path[path.size() - 2],lead_length,side,direction);
+        }
+
         //添加起刀路径
-        addCamPath(path,lead_length,overcut,lead_type);
-
-        //get leadin_point
-        getNormalPoint(leadin_point,path[0],path[1],lead_length,side,direction);
-        //getNormalPoint1(leadout_point,path[path.size() - 1],path[path.size() - 2],lead_length,side,direction);
-
+        addCamPath();
 
         //生成刀具图形
-        doc->addLines(tool_path,true);
-        doc->addLine(&leadin_point,&path[0]);
+        //doc->addLines(tool_path,true);
+        doc->addLines(path,false);
 
-        /*
-        //恢复线型为SolidLine
-        int color_val;
-        DPI::LineWidth line_width;
-        DPI::LineType line_type;
+        //生成G代码
+        QFile file;
+        file.setFileName(QFileDialog::getSaveFileName(parent,QString(tr("Save File")),
+                         QString("C:/Users/xcg/Desktop/libreCAD图纸"),QString("GCode Files (*.gcode)")));
 
-        doc->getCurrentLayerProperties(&color_val,&line_width,&line_type);
-        line_type = DPI::LineType::SolidLine;
-        doc->setCurrentLayerProperties(color_val,line_width,line_type);
-        */
+        file.open(QIODevice::WriteOnly | QIODevice::Text);
+
+
+        QTextStream stream(&file);
+        stream << "Result: " << qSetFieldWidth(10) << left << 3.14 << 2.7;
+        //file.write();
     }
 }
 
-void CamConfigure::sortPath(vector<QPointF>& points,vector<QPointF>& path,
+void CamConfigure::generateGCode()
+{
+
+
+
+}
+
+void CamConfigure::sortPath(vector<QPointF>& points,
               QPointF& start_point,CAM_INFO::DirectionType direction,CAM_INFO::SideType side)
 {
-    if((direction == CAM_INFO::DirectionType::Left && side == CAM_INFO::SideType::Outside)
-            || (direction == CAM_INFO::DirectionType::Right && side == CAM_INFO::SideType::Inside))
+    //规定绘图顺序都按照 逆时针，如果要求的刀具轨迹为顺时针，则反转路径
+    if((direction == CAM_INFO::DirectionType::Right && side == CAM_INFO::SideType::Outside)
+            || (direction == CAM_INFO::DirectionType::Left && side == CAM_INFO::SideType::Inside))
     {
         reverse(points.begin(),points.end());
     }
@@ -116,7 +136,86 @@ void CamConfigure::sortPath(vector<QPointF>& points,vector<QPointF>& path,
     path.emplace_back(start_point);
 }
 
-bool CamConfigure::selectEntity(Document_Interface *doc,vector<QPointF>& points,QWidget* parent)
+void CamConfigure::sortGPath(vector<Plug_VertexData>& g_points,QPointF& start_point,
+               CAM_INFO::DirectionType direction,CAM_INFO::SideType side)
+{
+    //规定绘图顺序都按照 逆时针，如果要求的刀具轨迹为顺时针，则反转路径
+    if((direction == CAM_INFO::DirectionType::Right && side == CAM_INFO::SideType::Outside)
+            || (direction == CAM_INFO::DirectionType::Left && side == CAM_INFO::SideType::Inside))
+    {
+        for(int i = 0;i<g_points.size();i++)
+        {
+            Plug_VertexData& pt = g_points[i];
+            if(pt.bulge < 0)
+            {
+                if(i < g_points.size()-1)
+                {
+                    //Plug_VertexData& next_pt = g_points[i+1];
+                    g_points[i+1].bulge = (-1)*pt.bulge;
+                }
+                else
+                {
+                    //Plug_VertexData& next_pt = g_points.front();
+                    g_points[0].bulge = (-1)*pt.bulge;
+                }
+
+                pt.bulge = 0.0;
+            }
+        }
+
+        reverse(g_points.begin(),g_points.end());
+    }
+    else
+    {
+        for(int i = 0;i<g_points.size();i++)
+        {
+            Plug_VertexData& pt = g_points[i];
+            if(pt.bulge > 0)
+            {
+                if(i < g_points.size()-1)
+                {
+                    //Plug_VertexData& next_pt = g_points[i+1];
+                    g_points[i+1].bulge = (-1)*pt.bulge;
+                }
+                else
+                {
+                    //Plug_VertexData& next_pt = g_points.front();
+                    g_points[0].bulge = (-1)*pt.bulge;
+                }
+
+                pt.bulge = 0.0;
+            }
+        }
+    }
+
+    auto it = find_if(g_points.begin(),g_points.end(),
+               [start_point](const Plug_VertexData& vertex)->bool
+               {return vertex.point == start_point;});
+
+    copy(it,g_points.end(),back_inserter(g_path));
+    copy(g_points.begin(),it,back_inserter(g_path));
+    g_path.emplace_back(Plug_VertexData(start_point,0.0));
+
+
+/*
+    for(auto iter = it;it != g_points.end();iter++)
+    {
+        auto tmp = *iter;
+        g_path.push_back(tmp);
+    }
+
+    for(auto iter = g_points.begin();iter != it;iter++)
+    {
+        auto tmp = *iter;
+        g_path.push_back(tmp);
+    }
+
+    g_path.push_back(Plug_VertexData(start_point,0.0));
+*/
+}
+
+bool CamConfigure::selectEntity(Document_Interface *doc,vector<QPointF>& points,
+                                vector<Plug_VertexData>& g_points,QWidget* parent)
 {
     QList<Plug_Entity *> e_lt;
     bool flag = true;
@@ -150,8 +249,8 @@ bool CamConfigure::selectEntity(Document_Interface *doc,vector<QPointF>& points,
             int n = vertexs.size();
 
             for(int i=0;i<n;i++){
-                QPointF pt(vertexs.at(i).point.x(),vertexs.at(i).point.y());
-                points.emplace_back(pt);
+                points.emplace_back(vertexs.at(i).point);
+                g_points.emplace_back(vertexs.at(i));
             }
         }
         else{
@@ -239,11 +338,18 @@ void CamConfigure::setDot(Document_Interface* doc)
     */
 }
 
-void CamConfigure::addCamPath(vector<QPointF>& path,double dis,double overcut,
-                              CAM_INFO::LeadType lead_type)
+void CamConfigure::addCamPath()
 {
+        QPointF homePoint(0.0,0.0);
 
+        path.insert(path.begin(),homePoint);
+        path.insert(path.begin()+1,leadin_point);
 
+        path.push_back(leadout_point);
+}
+
+void CamConfigure::addGPath()
+{
 
 }
 
@@ -356,6 +462,13 @@ void CamConfigure::getNormalPoint1(QPointF& point,const QPointF& point1,const QP
 void CamConfigure::getExtensionPoint(QPointF& point,const QPointF& point1,const QPointF& point2,double dis)
 {
 
+}
+
+double CamConfigure::polylineRadius( const Plug_VertexData& ptA, const Plug_VertexData& ptB)
+{
+    double dChord = sqrt( pow(ptA.point.x() - ptB.point.x(), 2) + pow(ptA.point.y() - ptB.point.y(), 2));
+
+    return fabs( 0.5 * dChord / sin( 2.0 * atan(ptA.bulge)));
 }
 
 
