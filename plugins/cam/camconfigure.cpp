@@ -89,29 +89,140 @@ void CamConfigure::execComm(Document_Interface *doc, QWidget *parent, QString cm
         //doc->addLines(tool_path,true);
         doc->addLines(path,false);
 
-        //生成G代码
-        QFile file;
-        file.setFileName(QFileDialog::getSaveFileName(parent,QString(tr("Save File")),
-                         QString("C:/Users/xcg/Desktop/libreCAD图纸"),QString("GCode Files (*.gcode)")));
-
-        file.open(QIODevice::WriteOnly | QIODevice::Text);
-
-
-        QTextStream stream(&file);
-        stream << "Result: " << qSetFieldWidth(10) << left << 3.14 << 2.7;
-        //file.write();
+        generateGCode(parent);
     }
 }
 
-void CamConfigure::generateGCode()
+void CamConfigure::generateGCode(QWidget* parent)
 {
+    //生成G代码
+    QFile file;
+    file.setFileName(QFileDialog::getSaveFileName(parent,QString(tr("Save File")),
+                                                  QString("C:/Users/xcg/Desktop/libreCAD图纸"),QString("GCode Files (*.gcode)")));
+
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    int cnt = 0;
+
+    QTextStream stream(&file);
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "G00 Z" << d_info.safe_z;
+    stream << "\n";
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "G00 " << "X" << leadin_point.x() << " " << "Y" << leadin_point.y();
+    stream << "\n";
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "T" << t_info.tool_code << " " << "M06";
+    stream << "\n";
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "S" << t_info.spin_speed << " " << "M03";
+    stream << "\n";
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "G00" << " " << "Z" << d_info.start_depth;
+    stream << "\n";
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "G01" << " " << "Z" << (-1)*d_info.cut_depth << " F" << t_info.plunge_rate;
+    stream << "\n";
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "F" << t_info.feed_rate;
+    stream << "\n";
+
+    for(int i=0;i<g_path.size();i++)
+    {
+        Plug_VertexData pt = g_path[i];
+
+        cnt += 10;
+        stream << "N" << cnt << " ";
+        if(i == 0)
+        {
+            //Left -> G41  Right -> G42 ; 顺时针 -> G02  逆时针 -> G03
+            if(direction == CAM_INFO::DirectionType::Left)
+            {
+                stream << "G41 " << "X" << pt.point.x() << " " << "Y" << pt.point.y();
+            }
+            else
+            {
+                stream << "G42 " << "X" << pt.point.x() << " " << "Y" << pt.point.y();
+            }
+        }
+        else
+        {
+            //直线
+            if(pt.bulge == 0)
+            {
+                stream << "G01" << " " << "X" << pt.point.x() << " " << "Y" << pt.point.y();
+
+            }
+            else
+            {
+                double r;
+                //如果此时是最后一个点，跳出循环
+                if(i == g_path.size() - 1)
+                {
+                    r = polylineRadius(pt,g_path[i+1]);
+                }
+                else
+                {
+                    r = polylineRadius(pt,g_path[0]);
+                }
+
+                if(pt.bulge > 0)//逆时针
+                {
+                    stream << "G03" << " ";
+                }
+                else
+                {
+                    stream << "G02" << " ";
+                }
+
+                stream << "X" << pt.point.x() << " " << "Y" << pt.point.y() << " ";
+                stream << "R" << r;
+            }
+
+        }
+
+        stream << "\n";
+    }
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "G40" << " " << "X" << leadout_point.x() << " " << "Y" << leadout_point.y();
+    stream << "\n";
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "Z" << d_info.start_depth;
+    stream << "\n";
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "G00 " << "Z" << d_info.safe_z;
+    stream << "\n";
+
+    cnt += 10;
+    stream << "N" << cnt << " ";
+    stream << "M30";
+    stream << "\n";
 
 
 
 }
 
 void CamConfigure::sortPath(vector<QPointF>& points,
-              QPointF& start_point,CAM_INFO::DirectionType direction,CAM_INFO::SideType side)
+                            QPointF& start_point,CAM_INFO::DirectionType direction,CAM_INFO::SideType side)
 {
     //规定绘图顺序都按照 逆时针，如果要求的刀具轨迹为顺时针，则反转路径
     if((direction == CAM_INFO::DirectionType::Right && side == CAM_INFO::SideType::Outside)
@@ -137,7 +248,7 @@ void CamConfigure::sortPath(vector<QPointF>& points,
 }
 
 void CamConfigure::sortGPath(vector<Plug_VertexData>& g_points,QPointF& start_point,
-               CAM_INFO::DirectionType direction,CAM_INFO::SideType side)
+                             CAM_INFO::DirectionType direction,CAM_INFO::SideType side)
 {
     //规定绘图顺序都按照 逆时针，如果要求的刀具轨迹为顺时针，则反转路径
     if((direction == CAM_INFO::DirectionType::Right && side == CAM_INFO::SideType::Outside)
@@ -189,15 +300,15 @@ void CamConfigure::sortGPath(vector<Plug_VertexData>& g_points,QPointF& start_po
     }
 
     auto it = find_if(g_points.begin(),g_points.end(),
-               [start_point](const Plug_VertexData& vertex)->bool
-               {return vertex.point == start_point;});
+                      [start_point](const Plug_VertexData& vertex)->bool
+    {return vertex.point == start_point;});
 
     copy(it,g_points.end(),back_inserter(g_path));
     copy(g_points.begin(),it,back_inserter(g_path));
     g_path.emplace_back(Plug_VertexData(start_point,0.0));
 
 
-/*
+    /*
     for(auto iter = it;it != g_points.end();iter++)
     {
         auto tmp = *iter;
@@ -340,12 +451,12 @@ void CamConfigure::setDot(Document_Interface* doc)
 
 void CamConfigure::addCamPath()
 {
-        QPointF homePoint(0.0,0.0);
+    QPointF homePoint(0.0,0.0);
 
-        path.insert(path.begin(),homePoint);
-        path.insert(path.begin()+1,leadin_point);
+    path.insert(path.begin(),homePoint);
+    path.insert(path.begin()+1,leadin_point);
 
-        path.push_back(leadout_point);
+    path.push_back(leadout_point);
 }
 
 void CamConfigure::addGPath()
@@ -397,24 +508,24 @@ void CamConfigure::getNormalPoint(QPointF& point,const QPointF& point1,const QPo
         x = (y2*((-l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
              + l*y1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              +x1*y2*y2+x1*y1*y1+x1*x2*x2-2*x1*x1*x2+x1*x1*x1)
-             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+                /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
 
         y = (l*x2*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              - l*x1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              +y1*y2*y2-2*y1*y1*y2+y1*y1*y1+(x2*x2-2*x1*x2+x1*x1)*y1)
-             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+                /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
     }
     else
     {
         x = (y2*((l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
              - l*y1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              +x1*y2*y2+x1*y1*y1+x1*x2*x2-2*x1*x1*x2+x1*x1*x1)
-             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+                /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
 
         y = (-l*x2*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              +l*x1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              +y1*y2*y2-2*y1*y1*y2+y1*y1*y1+(x2*x2-2*x1*x2+x1*x1)*y1)
-             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+                /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
     }
 
     point.setX(x);
@@ -422,7 +533,7 @@ void CamConfigure::getNormalPoint(QPointF& point,const QPointF& point1,const QPo
 }
 
 void CamConfigure::getNormalPoint1(QPointF& point,const QPointF& point1,const QPointF& point2,double l,
-                                  CAM_INFO::SideType side,CAM_INFO::DirectionType direction)
+                                   CAM_INFO::SideType side,CAM_INFO::DirectionType direction)
 {
     double x1 = point1.x();
     double y1 = point1.y();
@@ -435,24 +546,24 @@ void CamConfigure::getNormalPoint1(QPointF& point,const QPointF& point1,const QP
         x = (y2*((-l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
              + l*y1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              +x1*y2*y2+x1*y1*y1+x1*x2*x2-2*x1*x1*x2+x1*x1*x1)
-             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+                /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
 
         y = (l*x2*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              - l*x1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              +y1*y2*y2-2*y1*y1*y2+y1*y1*y1+(x2*x2-2*x1*x2+x1*x1)*y1)
-             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+                /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
     }
     else
     {
         x = (y2*((l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
              - l*y1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              +x1*y2*y2+x1*y1*y1+x1*x2*x2-2*x1*x1*x2+x1*x1*x1)
-             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+                /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
 
         y = (-l*x2*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              +l*x1*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1)
              +y1*y2*y2-2*y1*y1*y2+y1*y1*y1+(x2*x2-2*x1*x2+x1*x1)*y1)
-             /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
+                /(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1);
     }
 
     point.setX(x);

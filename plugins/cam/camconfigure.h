@@ -44,7 +44,7 @@ public:
 
     void addCamPath();
     void addGPath();
-    void generateGCode();
+    void generateGCode(QWidget* parent);
     void getNormalPoint(QPointF& point,const QPointF& point1,const QPointF& point2,double dis,
                         CAM_INFO::SideType side,CAM_INFO::DirectionType direction);
     void getNormalPoint1(QPointF& point,const QPointF& point1,const QPointF& point2,double dis,
