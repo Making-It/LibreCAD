@@ -23,6 +23,12 @@
 using namespace CAM_INFO;
 using namespace std;
 
+struct Depth_Info
+{
+    double safe_z,start_depth,cut_depth;
+    int passes;
+};
+
 class CamDlg : public QDialog
 {
     Q_OBJECT
@@ -32,13 +38,15 @@ public:
 
     void init();
     void layOut();
-    double getRadius();
-    double getLeadLength();
-    double getOverCut();
 
-    LeadType getLead();
-    DirectionType getDirection();
-    SideType getSide();
+    double getRadius() const;
+    double getLeadLength() const;
+    double getOverCut() const;
+    Depth_Info getDepthInfo() const;
+
+    LeadType getLead() const;
+    DirectionType getDirection() const;
+    SideType getSide() const;
     Tool_Info getToolInfo();
 
     void createFirstGroup();
@@ -90,6 +98,8 @@ private:
     DirectionType direction;
     SideType side;
     LeadType lead_type;
+
+    Depth_Info dep_info;
 
     map<int,Tool_Info> tool_mp;
     int cur_code;
