@@ -46,7 +46,7 @@ void CamTool::createBox()
     lab4 = new QLabel(this);
     lab4->setText(tr("Diameter:"));
     edit3 = new QLineEdit(this);
-    edit3->setText(tr("0"));
+    edit3->setText(tr("5"));
 
     unit_lab1 = new QLabel(this);
     unit_lab1->setText(tr("mm"));
@@ -54,7 +54,7 @@ void CamTool::createBox()
     lab5 = new QLabel(this);
     lab5->setText(tr("Spindle Speed:"));
     edit4 = new QLineEdit(this);
-    edit4->setText(tr("0"));
+    edit4->setText(tr("2500"));
 
     unit_lab2 = new QLabel(this);
     unit_lab2->setText(tr("r.p.m"));
@@ -63,12 +63,12 @@ void CamTool::createBox()
     lab6->setText(tr("Feed Rate:"));
 
     edit5 = new QLineEdit(this);
-    edit5->setText(tr("0"));
+    edit5->setText(tr("500"));
 
     lab7 = new QLabel(this);
     lab7->setText(tr("Plunge Rate:"));
     edit6 = new QLineEdit(this);
-    edit6->setText(tr("0"));
+    edit6->setText(tr("250"));
 
     b1_layout = new QGridLayout;
 

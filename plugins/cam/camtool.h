@@ -21,12 +21,12 @@ class Tool_Info
 public:
     Tool_Info()
     {
-        tool_code = 0;
-        diameter = 0.0;
+        tool_code = 1;
+        diameter = 5;
         tool_type = CAM_INFO::ToolType::Mill;
-        spin_speed = 0;
-        feed_rate = 0;
-        plunge_rate = 0;
+        spin_speed = 2500;
+        feed_rate = 500;
+        plunge_rate = 250;
     }
 
     int tool_code;
