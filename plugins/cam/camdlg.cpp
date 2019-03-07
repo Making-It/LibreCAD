@@ -190,11 +190,11 @@ void CamDlg::createThirdGroup()
     //b3_tab2->setFocus(Qt::NoFocus);
 
     b3_edit1 = new QLineEdit(this);
-    b3_edit1->setText(tr("0"));
+    b3_edit1->setText(tr("10"));
     b3_edit1->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
 
     b3_edit2 = new QLineEdit(this);
-    b3_edit2->setText(tr("0"));
+    b3_edit2->setText(tr("10"));
     b3_edit2->setFocusPolicy(Qt::NoFocus);
 
     b3_edit3 = new QLineEdit(this);
@@ -248,11 +248,11 @@ void CamDlg::createFourthGroup()
     b4_lab4->setText(tr("Passes:"));
 
     b4_edit1 = new QLineEdit(this);
-    b4_edit1->setText(tr("0"));
+    b4_edit1->setText(tr("50"));
     b4_edit1->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
 
     b4_edit2 = new QLineEdit(this);
-    b4_edit2->setText(tr("0"));
+    b4_edit2->setText(tr("2"));
     b4_edit2->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
 
     b4_edit3 = new QLineEdit(this);

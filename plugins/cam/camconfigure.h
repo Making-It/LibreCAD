@@ -30,7 +30,7 @@ public:
     virtual void execComm(Document_Interface *doc, QWidget *parent, QString cmd) Q_DECL_OVERRIDE;
     vector<QPointF> getOffset(const vector<QPointF>& vec,double delta);
 
-    void setDot(Document_Interface* doc);
+    void setLineType(Document_Interface* doc,DPI::LineType type);
     bool selectStartPoint(Document_Interface* doc,QPointF& point,
                           const vector<QPointF>& points,QWidget* parent,bool& cancel);
     bool selectEntity(Document_Interface* doc,vector<QPointF>& points,

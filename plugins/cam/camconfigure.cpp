@@ -62,8 +62,10 @@ void CamConfigure::execComm(Document_Interface *doc, QWidget *parent, QString cm
         lead_type = cam_dlg.getLead();
         side = cam_dlg.getSide();
 
-        sortPath(points,start_point,direction,side);
+        //排序路径
+        //sortPath(points,start_point,direction,side);
         sortGPath(g_points,start_point,direction,side);
+
         if(g_path.empty())
         {
             QMessageBox::information(parent,"Warning","g_path is empty!");
@@ -72,22 +74,45 @@ void CamConfigure::execComm(Document_Interface *doc, QWidget *parent, QString cm
 
         //tool_path = getOffset(path,delta * (static_cast<int>(side)) );
 
-        //路径标虚线
-        setDot(doc);
 
         //get leadin_point/leadout_point
         if(lead_type == CAM_INFO::LeadType::Normal)
         {
-            getNormalPoint(leadin_point,path[0],path[1],lead_length,side,direction);
-            getNormalPoint1(leadout_point,path[path.size() - 1],path[path.size() - 2],lead_length,side,direction);
+            Plug_VertexData pt1 = g_path[0];
+            //判断g_path起始点是否为圆弧起点，从而计算leadin_point的正确位置位置
+            if(pt1.bulge == 0)
+            {
+                getNormalPoint(leadin_point,path[0],path[1],lead_length,side,direction);
+            }
+            else
+            {
+                getNormalPoint1(leadin_point,path[path.size() - 1],path[path.size() - 2],lead_length,side,direction);
+            }
+
+            Plug_VertexData pt2 = g_path[g_path.size()-2];
+            //判断g_path终点是否为圆弧起点，从而计算leadout_point的正确位置
+            if(pt2.bulge == 0)
+            {
+                getNormalPoint1(leadout_point,path[path.size() - 1],path[path.size() - 2],lead_length,side,direction);
+            }
+            else
+            {
+                getNormalPoint(leadout_point,path[0],path[1],lead_length,side,direction);
+            }
         }
 
         //添加起刀路径
         addCamPath();
 
+        //路径标虚线
+        setLineType(doc,DPI::LineType::DashLine2);
+
         //生成刀具图形
         //doc->addLines(tool_path,true);
         doc->addLines(path,false);
+
+        //恢复实线
+        //setLineType(doc,DPI::LineType::SolidLine);
 
         generateGCode(parent);
     }
@@ -100,7 +125,7 @@ void CamConfigure::generateGCode(QWidget* parent)
     file.setFileName(QFileDialog::getSaveFileName(parent,QString(tr("Save File")),
                                                   QString("C:/Users/xcg/Desktop/libreCAD图纸"),QString("GCode Files (*.gcode)")));
 
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
     int cnt = 0;
 
     QTextStream stream(&file);
@@ -160,24 +185,27 @@ void CamConfigure::generateGCode(QWidget* parent)
         }
         else
         {
+            Plug_VertexData pt1 = g_path[i-1];
+
             //直线
-            if(pt.bulge == 0)
+            if(pt1.bulge == 0)
             {
                 stream << "G01" << " " << "X" << pt.point.x() << " " << "Y" << pt.point.y();
-
             }
             else
             {
                 double r;
                 //如果此时是最后一个点，跳出循环
-                if(i == g_path.size() - 1)
+                /*if(i == g_path.size() - 1)
                 {
-                    r = polylineRadius(pt,g_path[i+1]);
+                    r = polylineRadius(pt1,pt);
                 }
                 else
                 {
-                    r = polylineRadius(pt,g_path[0]);
+                    r = polylineRadius(pt1,g_path[0]);
                 }
+                */
+                r = polylineRadius(pt1,pt);
 
                 if(pt.bulge > 0)//逆时针
                 {
@@ -217,7 +245,8 @@ void CamConfigure::generateGCode(QWidget* parent)
     stream << "M30";
     stream << "\n";
 
-
+    file.close();
+    g_path.clear();
 
 }
 
@@ -225,8 +254,8 @@ void CamConfigure::sortPath(vector<QPointF>& points,
                             QPointF& start_point,CAM_INFO::DirectionType direction,CAM_INFO::SideType side)
 {
     //规定绘图顺序都按照 逆时针，如果要求的刀具轨迹为顺时针，则反转路径
-    if((direction == CAM_INFO::DirectionType::Right && side == CAM_INFO::SideType::Outside)
-            || (direction == CAM_INFO::DirectionType::Left && side == CAM_INFO::SideType::Inside))
+    if((direction == CAM_INFO::DirectionType::Left && side == CAM_INFO::SideType::Outside)
+            || (direction == CAM_INFO::DirectionType::Right && side == CAM_INFO::SideType::Inside))
     {
         reverse(points.begin(),points.end());
     }
@@ -234,6 +263,7 @@ void CamConfigure::sortPath(vector<QPointF>& points,
     path.clear();
 
     auto it = find(points.begin(),points.end(),start_point);
+
     for(auto iter = it;iter != points.end();iter++)
     {
         path.emplace_back(*iter);
@@ -244,6 +274,7 @@ void CamConfigure::sortPath(vector<QPointF>& points,
         path.emplace_back(*iter);
     }
 
+
     path.emplace_back(start_point);
 }
 
@@ -251,13 +282,14 @@ void CamConfigure::sortGPath(vector<Plug_VertexData>& g_points,QPointF& start_po
                              CAM_INFO::DirectionType direction,CAM_INFO::SideType side)
 {
     //规定绘图顺序都按照 逆时针，如果要求的刀具轨迹为顺时针，则反转路径
-    if((direction == CAM_INFO::DirectionType::Right && side == CAM_INFO::SideType::Outside)
-            || (direction == CAM_INFO::DirectionType::Left && side == CAM_INFO::SideType::Inside))
+    //顺时针 -> bugle < 0 ; 逆时针 -> bugle > 0
+    if((direction == CAM_INFO::DirectionType::Left && side == CAM_INFO::SideType::Outside)
+            || (direction == CAM_INFO::DirectionType::Right && side == CAM_INFO::SideType::Inside))
     {
         for(int i = 0;i<g_points.size();i++)
         {
             Plug_VertexData& pt = g_points[i];
-            if(pt.bulge < 0)
+            if(pt.bulge > 0)
             {
                 if(i < g_points.size()-1)
                 {
@@ -281,7 +313,7 @@ void CamConfigure::sortGPath(vector<Plug_VertexData>& g_points,QPointF& start_po
         for(int i = 0;i<g_points.size();i++)
         {
             Plug_VertexData& pt = g_points[i];
-            if(pt.bulge > 0)
+            if(pt.bulge < 0)
             {
                 if(i < g_points.size()-1)
                 {
@@ -303,26 +335,37 @@ void CamConfigure::sortGPath(vector<Plug_VertexData>& g_points,QPointF& start_po
                       [start_point](const Plug_VertexData& vertex)->bool
     {return vertex.point == start_point;});
 
+    g_path.clear();
     copy(it,g_points.end(),back_inserter(g_path));
     copy(g_points.begin(),it,back_inserter(g_path));
+
+
+    //如果为内侧且选择的起始点不在圆弧上，重新定位start_point
+    if(side == CAM_INFO::SideType::Inside && g_path[0].bulge == 0)
+    {
+        QPointF pt1 = g_path[0].point;
+        QPointF pt2 = g_path[1].point;
+
+        QPointF pm;
+        pm.setX((pt1.x()+pt2.x())/2);
+        pm.setY((pt1.y()+pt2.y())/2);
+
+        start_point = pm;
+        //删除原来的起始点
+        g_path.erase(g_path.begin());
+
+        g_path.insert(g_path.begin(),Plug_VertexData(start_point,0.0));
+        g_path.emplace_back(Plug_VertexData(pt1,0.0));
+    }
+
     g_path.emplace_back(Plug_VertexData(start_point,0.0));
 
-
-    /*
-    for(auto iter = it;it != g_points.end();iter++)
+    //由g_path生成path
+    path.clear();
+    for(Plug_VertexData pt : g_path)
     {
-        auto tmp = *iter;
-        g_path.push_back(tmp);
+        path.emplace_back(pt.point);
     }
-
-    for(auto iter = g_points.begin();iter != it;iter++)
-    {
-        auto tmp = *iter;
-        g_path.push_back(tmp);
-    }
-
-    g_path.push_back(Plug_VertexData(start_point,0.0));
-*/
 }
 
 bool CamConfigure::selectEntity(Document_Interface *doc,vector<QPointF>& points,
@@ -404,7 +447,7 @@ bool CamConfigure::selectStartPoint(Document_Interface* doc,QPointF& point,
     return true;
 }
 
-void CamConfigure::setDot(Document_Interface* doc)
+void CamConfigure::setLineType(Document_Interface* doc,DPI::LineType type)
 {
     int color_val;
     DPI::LineWidth line_width;
@@ -412,7 +455,7 @@ void CamConfigure::setDot(Document_Interface* doc)
 
     //设置线型为DashLine2
     doc->getCurrentLayerProperties(&color_val,&line_width,&line_type);
-    line_type = DPI::LineType::DashLine2;
+    line_type = type;
     doc->setCurrentLayerProperties(color_val,line_width,line_type);
 
     //把原实体线型恢复为SolidLine
@@ -503,6 +546,8 @@ void CamConfigure::getNormalPoint(QPointF& point,const QPointF& point1,const QPo
     double y2 = point2.y();
     double x = point1.x(),y = point1.y();
 
+    //如果是刀具在工件左边，则以point1->point2的向量逆时针旋转90度，再根据lead_length得出目标点point位置
+    //否则，顺时针旋转90度计算出point的位置
     if(direction == CAM_INFO::DirectionType::Left)
     {
         x = (y2*((-l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
@@ -541,6 +586,8 @@ void CamConfigure::getNormalPoint1(QPointF& point,const QPointF& point1,const QP
     double y2 = point2.y();
     double x = point1.x(),y = point1.y();
 
+    //如果是刀具在工件右边，则以point1->point2的向量逆时针旋转90度，再根据lead_length得出目标点point位置
+    //否则，顺时针旋转90度计算出point的位置
     if(direction == CAM_INFO::DirectionType::Right)
     {
         x = (y2*((-l*sqrt(y2*y2-2*y1*y2+y1*y1+x2*x2-2*x1*x2+x1*x1))-2*x1*y1)
