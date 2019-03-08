@@ -25,7 +25,7 @@ using namespace std;
 
 struct Depth_Info
 {
-    double safe_z,start_depth,cut_depth;
+    double start_z,safe_z,start_depth,cut_depth;
     int passes;
 };
 
@@ -83,9 +83,9 @@ private:
     QLineEdit *b3_edit1,*b3_edit2,*b3_edit3;
     QLabel *b3_unit_lab1,*b3_unit_lab2,*b3_unit_lab3;
 
-    QLabel *b4_lab1,*b4_lab2,*b4_lab3,*b4_lab4;
-    QLineEdit *b4_edit1,*b4_edit2,*b4_edit3,*b4_edit4;
-    QLabel *b4_unit_lab1,*b4_unit_lab2,*b4_unit_lab3;
+    QLabel *b4_lab0,*b4_lab1,*b4_lab2,*b4_lab3,*b4_lab4;
+    QLineEdit *b4_edit0,*b4_edit1,*b4_edit2,*b4_edit3,*b4_edit4;
+    QLabel *b4_unit_lab0,*b4_unit_lab1,*b4_unit_lab2,*b4_unit_lab3;
 
     QGridLayout *b1_layout,*b2_layout,*b3_layout,*b4_layout;
 

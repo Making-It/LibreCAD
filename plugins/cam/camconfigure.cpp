@@ -82,22 +82,22 @@ void CamConfigure::execComm(Document_Interface *doc, QWidget *parent, QString cm
             //判断g_path起始点是否为圆弧起点，从而计算leadin_point的正确位置位置
             if(pt1.bulge == 0)
             {
-                getNormalPoint(leadin_point,path[0],path[1],lead_length,side,direction);
+                getNormalPoint(leadin_point,path[0],path[1],lead_length,direction);
             }
             else
             {
-                getNormalPoint1(leadin_point,path[path.size() - 1],path[path.size() - 2],lead_length,side,direction);
+                getNormalPoint1(leadin_point,path[path.size() - 1],path[path.size() - 2],lead_length,direction);
             }
 
             Plug_VertexData pt2 = g_path[g_path.size()-2];
             //判断g_path终点是否为圆弧起点，从而计算leadout_point的正确位置
             if(pt2.bulge == 0)
             {
-                getNormalPoint1(leadout_point,path[path.size() - 1],path[path.size() - 2],lead_length,side,direction);
+                getNormalPoint1(leadout_point,path[path.size() - 1],path[path.size() - 2],lead_length,direction);
             }
             else
             {
-                getNormalPoint(leadout_point,path[0],path[1],lead_length,side,direction);
+                getNormalPoint(leadout_point,path[0],path[1],lead_length,direction);
             }
         }
 
@@ -132,7 +132,7 @@ void CamConfigure::generateGCode(QWidget* parent)
 
     cnt += 10;
     stream << "N" << cnt << " ";
-    stream << "G00 Z" << d_info.safe_z;
+    stream << "G00 Z" << d_info.start_z;
     stream << "\n";
 
     cnt += 10;
@@ -152,83 +152,96 @@ void CamConfigure::generateGCode(QWidget* parent)
 
     cnt += 10;
     stream << "N" << cnt << " ";
-    stream << "G00" << " " << "Z" << d_info.start_depth;
+    stream << "G00" << " " << "Z" << d_info.safe_z;
     stream << "\n";
 
-    cnt += 10;
-    stream << "N" << cnt << " ";
-    stream << "G01" << " " << "Z" << (-1)*d_info.cut_depth << " F" << t_info.plunge_rate;
-    stream << "\n";
 
-    cnt += 10;
-    stream << "N" << cnt << " ";
-    stream << "F" << t_info.feed_rate;
-    stream << "\n";
+    int passes = d_info.passes;
+    double cur_dep = d_info.start_depth;
+    double end_dep = d_info.cut_depth;
+    double cut_dis = end_dep - cur_dep;
 
-    for(int i=0;i<g_path.size();i++)
+    for(int i = 0;i < passes;i++)
     {
-        Plug_VertexData pt = g_path[i];
+        if(i < passes - 1) cur_dep += cut_dis/passes;
+        else cur_dep = end_dep;
 
         cnt += 10;
         stream << "N" << cnt << " ";
-        if(i == 0)
-        {
-            //Left -> G41  Right -> G42 ; 顺时针 -> G02  逆时针 -> G03
-            if(direction == CAM_INFO::DirectionType::Left)
-            {
-                stream << "G41 " << "X" << pt.point.x() << " " << "Y" << pt.point.y();
-            }
-            else
-            {
-                stream << "G42 " << "X" << pt.point.x() << " " << "Y" << pt.point.y();
-            }
-        }
-        else
-        {
-            Plug_VertexData pt1 = g_path[i-1];
+        stream << "G01" << " " << "Z" << (-1)*cur_dep << " F" << t_info.plunge_rate;
+        stream << "\n";
 
-            //直线
-            if(pt1.bulge == 0)
+        cnt += 10;
+        stream << "N" << cnt << " ";
+        stream << "F" << t_info.feed_rate;
+        stream << "\n";
+
+        for(int i=0;i<g_path.size();i++)
+        {
+            Plug_VertexData pt = g_path[i];
+
+            cnt += 10;
+            stream << "N" << cnt << " ";
+            if(i == 0)
             {
-                stream << "G01" << " " << "X" << pt.point.x() << " " << "Y" << pt.point.y();
+                //Left -> G41  Right -> G42 ; 顺时针 -> G02  逆时针 -> G03
+                if(direction == CAM_INFO::DirectionType::Left)
+                {
+                    stream << "G41 " << "X" << pt.point.x() << " " << "Y" << pt.point.y();
+                }
+                else
+                {
+                    stream << "G42 " << "X" << pt.point.x() << " " << "Y" << pt.point.y();
+                }
             }
             else
             {
-                double r;
-                //如果此时是最后一个点，跳出循环
-                /*if(i == g_path.size() - 1)
+                Plug_VertexData pt1 = g_path[i-1];
+
+                //直线
+                if(pt1.bulge == 0)
                 {
+                    stream << "G01" << " " << "X" << pt.point.x() << " " << "Y" << pt.point.y();
+                }
+                else
+                {
+                    double r;
+                    //如果此时是最后一个点，跳出循环
+                    /*if(i == g_path.size() - 1)
+                    {
+                        r = polylineRadius(pt1,pt);
+                    }
+                    else
+                    {
+                        r = polylineRadius(pt1,g_path[0]);
+                    }
+                    */
                     r = polylineRadius(pt1,pt);
-                }
-                else
-                {
-                    r = polylineRadius(pt1,g_path[0]);
-                }
-                */
-                r = polylineRadius(pt1,pt);
 
-                if(pt.bulge > 0)//逆时针
-                {
-                    stream << "G03" << " ";
-                }
-                else
-                {
-                    stream << "G02" << " ";
+                    if(pt.bulge > 0)//逆时针
+                    {
+                        stream << "G03" << " ";
+                    }
+                    else
+                    {
+                        stream << "G02" << " ";
+                    }
+
+                    stream << "X" << pt.point.x() << " " << "Y" << pt.point.y() << " ";
+                    stream << "R" << r;
                 }
 
-                stream << "X" << pt.point.x() << " " << "Y" << pt.point.y() << " ";
-                stream << "R" << r;
             }
 
+            stream << "\n";
         }
 
+        cnt += 10;
+        stream << "N" << cnt << " ";
+        stream << "G40" << " " << "X" << leadout_point.x() << " " << "Y" << leadout_point.y();
         stream << "\n";
     }
 
-    cnt += 10;
-    stream << "N" << cnt << " ";
-    stream << "G40" << " " << "X" << leadout_point.x() << " " << "Y" << leadout_point.y();
-    stream << "\n";
 
     cnt += 10;
     stream << "N" << cnt << " ";
@@ -538,7 +551,7 @@ std::vector<QPointF> CamConfigure::getOffset(const vector<QPointF>& vec,double d
 }
 
 void CamConfigure::getNormalPoint(QPointF& point,const QPointF& point1,const QPointF& point2,double l,
-                                  CAM_INFO::SideType side,CAM_INFO::DirectionType direction)
+                                  CAM_INFO::DirectionType direction)
 {
     double x1 = point1.x();
     double y1 = point1.y();
@@ -578,7 +591,7 @@ void CamConfigure::getNormalPoint(QPointF& point,const QPointF& point1,const QPo
 }
 
 void CamConfigure::getNormalPoint1(QPointF& point,const QPointF& point1,const QPointF& point2,double l,
-                                   CAM_INFO::SideType side,CAM_INFO::DirectionType direction)
+                                   CAM_INFO::DirectionType direction)
 {
     double x1 = point1.x();
     double y1 = point1.y();
