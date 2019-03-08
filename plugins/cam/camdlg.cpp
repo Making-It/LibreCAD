@@ -235,6 +235,9 @@ void CamDlg::createFourthGroup()
 {
     box4 = new QGroupBox(tr("Cutting Depths:"));
 
+    b4_lab0 = new QLabel(this);
+    b4_lab0->setText(tr("Start Z"));
+
     b4_lab1 = new QLabel(this);
     b4_lab1->setText(tr("Safe Z (a):"));
 
@@ -247,21 +250,27 @@ void CamDlg::createFourthGroup()
     b4_lab4 = new QLabel(this);
     b4_lab4->setText(tr("Passes:"));
 
+    b4_edit0 = new QLineEdit(this);
+    b4_edit0->setText(tr("50"));
+
     b4_edit1 = new QLineEdit(this);
-    b4_edit1->setText(tr("50"));
+    b4_edit1->setText(tr("0"));
     b4_edit1->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
 
     b4_edit2 = new QLineEdit(this);
-    b4_edit2->setText(tr("2"));
+    b4_edit2->setText(tr("0"));
     b4_edit2->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
 
     b4_edit3 = new QLineEdit(this);
-    b4_edit3->setText(tr("0"));
+    b4_edit3->setText(tr("4"));
     b4_edit3->setValidator(new QDoubleValidator(-50.0,50.0,2,this));
 
     b4_edit4 = new QLineEdit(this);
     b4_edit4->setText(tr("1"));
     b4_edit4->setValidator(new QIntValidator(0,10,this));
+
+    b4_unit_lab0 = new QLabel(this);
+    b4_unit_lab0->setText(tr("mm"));
 
     b4_unit_lab1 = new QLabel(this);
     b4_unit_lab1->setText(tr("mm"));
@@ -274,19 +283,22 @@ void CamDlg::createFourthGroup()
 
     b4_layout = new QGridLayout;
 
-    b4_layout->addWidget(b4_lab1,0,0);
-    b4_layout->addWidget(b4_lab2,1,0);
-    b4_layout->addWidget(b4_lab3,2,0);
-    b4_layout->addWidget(b4_lab4,3,0);
+    b4_layout->addWidget(b4_lab0,0,0);
+    b4_layout->addWidget(b4_lab1,1,0);
+    b4_layout->addWidget(b4_lab2,2,0);
+    b4_layout->addWidget(b4_lab3,3,0);
+    b4_layout->addWidget(b4_lab4,4,0);
 
-    b4_layout->addWidget(b4_edit1,0,1);
-    b4_layout->addWidget(b4_edit2,1,1);
-    b4_layout->addWidget(b4_edit3,2,1);
-    b4_layout->addWidget(b4_edit4,3,1);
+    b4_layout->addWidget(b4_edit0,0,1);
+    b4_layout->addWidget(b4_edit1,1,1);
+    b4_layout->addWidget(b4_edit2,2,1);
+    b4_layout->addWidget(b4_edit3,3,1);
+    b4_layout->addWidget(b4_edit4,4,1);
 
-    b4_layout->addWidget(b4_unit_lab1,0,2);
-    b4_layout->addWidget(b4_unit_lab2,1,2);
-    b4_layout->addWidget(b4_unit_lab3,2,2);
+    b4_layout->addWidget(b4_unit_lab0,0,2);
+    b4_layout->addWidget(b4_unit_lab1,1,2);
+    b4_layout->addWidget(b4_unit_lab2,2,2);
+    b4_layout->addWidget(b4_unit_lab3,3,2);
 
     box4->setLayout(b4_layout);
 
@@ -358,10 +370,12 @@ void CamDlg::setData()
 
     over_cut = b3_edit3->text().toDouble();
 
+    dep_info.start_z = b4_edit0->text().toDouble();
     dep_info.safe_z = b4_edit1->text().toDouble();
     dep_info.start_depth = b4_edit2->text().toDouble();
     dep_info.cut_depth = b4_edit3->text().toDouble();
     dep_info.passes = b4_edit4->text().toDouble();
+
 
     this->accept();
 }
